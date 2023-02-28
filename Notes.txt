@@ -1,0 +1,25 @@
+Project Manager
+Derrick Adkins
+adkinsdk@mail.uc.edu
+
+Software Developer
+Payton Turnbow
+turnbopd@mail.uc.edu
+
+Software Developer
+Broderic Duncan
+duncanbo@mail.uc.edu
+
+Meeting Time, Location, and Frequency
+After lecture, in classroom, weekly
+
+Intellectual Property Rights
+Project Manger retains all rights to intellectual property
+
+Proposed Work
+Create solution to control air duct dampers via mobile application through Wi-Fi
+
+Milestones
+Beginning of Fall Semester
+Beginning of Spring Semester
+IT EXPO – 4/9/2024
