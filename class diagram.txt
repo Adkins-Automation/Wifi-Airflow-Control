@@ -1,0 +1,39 @@
++--------------------------------------------------------+
+|                     HomeTemperatureControl              |
++--------------------------------------------------------+
+| - dampers: Damper[]                                    |
+| - temperatureSensors: TemperatureSensor[]              |
++--------------------------------------------------------+
+| + addDamper(d: Damper): void                           |
+| + removeDamper(d: Damper): void                        |
+| + getDampers(): Damper[]                               |
+| + addTemperatureSensor(ts: TemperatureSensor): void     |
+| + removeTemperatureSensor(ts: TemperatureSensor): void  |
+| + getTemperatureSensors(): TemperatureSensor[]          |
+| + getRoomTemperatures(): Map<Room, TemperatureReading>  |
+| + setDamperPosition(d: Damper, position: int): void     |
+| + getDamperPosition(d: Damper): int                     |
++--------------------------------------------------------+
+
++------------------------+             +-----------------------+
+|         Damper         |             |   TemperatureSensor    |
++------------------------+             +-----------------------+
+| - id: int              |             | - id: int             |
+| - room: Room           |             | - room: Room          |
+| - position: int        |             | - reading: double     |
++------------------------+             +-----------------------+
+| + getId(): int         |             | + getId(): int        |
+| + getRoom(): Room      |             | + getRoom(): Room     |
+| + setPosition(pos: int): void      | | + setReading(reading: double): void |
+| + getPosition(): int   |             | + getReading(): double|
++------------------------+             +-----------------------+
+
++------------------------+             +-----------------------+
+|         Room           |             |   TemperatureReading  |
++------------------------+             +-----------------------+
+| - id: int              |             | - room: Room          |
+| - name: string         |             | - temperature: double |
++------------------------+             +-----------------------+
+| + getId(): int         |             | + getRoom(): Room     |
+| + getName(): string    |             | + getTemperature(): double |
++------------------------+             +-----------------------+
