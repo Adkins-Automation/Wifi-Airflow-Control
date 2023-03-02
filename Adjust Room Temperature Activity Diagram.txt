@@ -1,0 +1,46 @@
++------------------------------------------------------+
+|           Adjust Room Temperature Activity           |
++------------------------------------------------------+
+| - room: Room                                         |
+| - dampers: Damper[]                                  |
+| - temperatureSensors: TemperatureSensor[]            |
++------------------------------------------------------+
+| + selectRoom(): void                                 |
+| + getDampersForRoom(): Damper[]                       |
+| + getTemperatureSensorForRoom(): TemperatureSensor    |
+| + getCurrentTemperature(): double                    |
+| + adjustTemperature(newTemp: double): void            |
+|                                                      |
+|  # Select the room to adjust the temperature for      |
+|  +------------------------+                          |
+|  |     Select Room         |                          |
+|  +------------------------+                          |
+|           |                                          |
+|           | Selected room                            |
+|           v                                          |
+|  # Get the dampers and temperature sensor for the room|
+|  +------------------------+                          |
+|  | Get Dampers and Sensor  |                          |
+|  +------------------------+                          |
+|           |                                          |
+|           | Dampers and sensor retrieved              |
+|           v                                          |
+|  # Get the current temperature of the room           |
+|  +------------------------+                          |
+|  | Get Current Temperature|                          |
+|  +------------------------+                          |
+|           |                                          |
+|           | Current temperature retrieved             |
+|           v                                          |
+|  # Adjust the temperature for the room               |
+|  +------------------------+                          |
+|  |   Adjust Temperature   |                          |
+|  +------------------------+                          |
+|           |                                          |
+|           | Temperature adjusted                     |
+|           v                                          |
+|  # End                                                |
+|  +------------------------+                          |
+|  |         Done           |                          |
+|  +------------------------+                          |
++------------------------------------------------------+
