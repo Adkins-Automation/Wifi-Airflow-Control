@@ -32,9 +32,9 @@ void loop() {
     String btS = bt.readString();
     //Serial.print("Received:");
     //Serial.println(btS);
-    if(btS.equals("debug:ON")) debugMode = true;
-    else if(btS.equals("debug:OFF")) debugMode = false;
-    else if(btS.equals("pos")) Serial.println(pos);
+    if(btS.equals("debug.on")) debugMode = true;
+    else if(btS.equals("debug.off")) debugMode = false;
+    else if(btS.equals("status")) Serial.println(pos);
     else if(isInt(btS)){
       if(debugMode){
         step(btS.toInt());
