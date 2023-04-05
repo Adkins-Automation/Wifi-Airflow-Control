@@ -2,11 +2,13 @@ Project Manager
 Derrick Adkins
 M14207301
 adkinsdk@mail.uc.edu
+937-903-1098
 
 Software Developer
 Payton Turnbow
 M13387101
 turnbopd@mail.uc.edu
+513-680-3429
 
 Software Developer
 Broderic Duncan
@@ -17,22 +19,18 @@ Cybersecurity and software
 Daniel Newell
 M13351192
 newelldb@mail.uc.edu
+440-567-4142
 
 Software Developer
 Cole Pownell
 M13360697
 pownelcg@mail.uc.edu
-
-Meeting Time, Location, and Frequency
-After lecture, in classroom, weekly
-
-Intellectual Property Rights
-Project Manger retains all rights to intellectual property
-
-Proposed Work
-Create solution to control air duct dampers via mobile application through Wi-Fi
+513-605-0460
 
 Milestones
-Beginning of Fall Semester
-Beginning of Spring Semester
-IT EXPO – 4/9/2024
+8/21/2023 - Beginning of Fall Semester
+1/8/2024 - Beginning of Spring Semester
+4/9/2024 - IT EXPO
+
+GitHub Repo
+https://github.com/Adkins-Automation/Wifi-Airflow-Control
