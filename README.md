@@ -6,4 +6,4 @@
  >As your main source of comfort from extreme outdoor temperatures, your HVAC system uses the most energy of any single appliance or system at 46 percent of the average U.S. home's energy consumption.
 
 ## Control from anywhere via mobile app or browser
-![Screenshot](/assets/images/Screenshot 2023-04-05 123340.png)
+![Screenshot](https://github.com/Adkins-Automation/Wifi-Airflow-Control/raw/main/assets/images/Screenshot%202023-04-05%20123340.png)
