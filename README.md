@@ -1,9 +1,7 @@
-<details>
-<summary># Wifi Airflow Control</summary>
+# Wifi Airflow Control
 WiFi-controlled air-duct damper that can be used to control the airflow and temperature in different rooms/areas of a home
 
 This project aims to create a WiFi controlled air duct damper for use in residential and commercial HVAC systems. The device will allow users to remotely adjust the airflow in specific rooms or areas, helping to optimize temperature control and save energy.
-</details>
 
 ## Getting Started
 To get started with this project, you will need to have the following materials:
