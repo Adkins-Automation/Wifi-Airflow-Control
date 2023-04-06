@@ -14,13 +14,14 @@ To get started with this project, you will need to have the following materials:
 - Jumper wires
 - PCB board
 - Housing material (such as 3D printed or laser-cut parts)
-- Installation
-- Clone the repository onto your local machine.
-- Open the project files in your preferred code editor.
-- Upload the code to your ESP8266 or ESP32 microcontroller.
-- Connect the motor driver board, servo motor, and duct damper to the microcontroller.
-- Connect the power supply to the motor driver board.
-- Assemble the housing for the hardware.
+
+## Installation
+1. Clone the repository onto your local machine.
+2. Open the project files in your preferred code editor.
+3. Upload the code to your ESP8266 or ESP32 microcontroller.
+4. Connect the motor driver board, servo motor, and duct damper to the microcontroller.
+5. Connect the power supply to the motor driver board.
+6. Assemble the housing for the hardware.
 
 ## Usage
 To use the WiFi controlled air duct damper, follow these steps:
