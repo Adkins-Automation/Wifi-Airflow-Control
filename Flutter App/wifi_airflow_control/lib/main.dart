@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-class RadioButtonGroup {
+class Damper {
   String label;
-  List<String> options;
-  int selectedOptionIndex;
+  List<String> positions;
+  int currentPosition;
 
-  RadioButtonGroup(this.label, this.options, this.selectedOptionIndex);
+  Damper(this.label, this.positions, this.currentPosition);
 
   @override
   String toString() {
-    return "$label, ${options[selectedOptionIndex]}";
+    return "$label, ${positions[currentPosition]}";
   }
 }
 
@@ -19,27 +19,25 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  List<RadioButtonGroup> radioButtonGroups = [];
+  List<Damper> dampers = [];
 
   void addNewRadioButtonGroup() {
     setState(() {
-      radioButtonGroups.add(RadioButtonGroup(
-          "Group ${radioButtonGroups.length + 1}",
-          ["0", "25", "50", "75", "100"],
-          0));
+      dampers.add(Damper(
+          "Damper ${dampers.length + 1}", ["0", "25", "50", "75", "100"], 0));
     });
   }
 
   void deleteRadioButtonGroup(int index) {
     setState(() {
-      print(radioButtonGroups[index]);
-      radioButtonGroups.removeAt(index);
+      print(dampers[index]);
+      dampers.removeAt(index);
     });
   }
 
   void updatedSelected(int index, int? value) {
     setState(() {
-      radioButtonGroups[index].selectedOptionIndex = value!;
+      dampers[index].currentPosition = value!;
     });
   }
 
@@ -50,11 +48,22 @@ class _AppState extends State<App> {
       home: Scaffold(
         appBar: AppBar(
           title: const Text("Air Duct Damper Controller Demo"),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(
+                Icons.settings,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                // do something
+              },
+            )
+          ],
         ),
         body: ListView.builder(
-          itemCount: radioButtonGroups.length,
+          itemCount: dampers.length,
           itemBuilder: (context, index) {
-            print("$index, ${radioButtonGroups[index]}");
+            print("$index, ${dampers[index]}");
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -67,12 +76,11 @@ class _AppState extends State<App> {
                         Expanded(
                           child: TextFormField(
                             key: UniqueKey(),
-                            initialValue: radioButtonGroups[index].label,
+                            initialValue: dampers[index].label,
                             decoration: InputDecoration(
                               labelText: 'Zone Name',
                             ),
-                            onChanged: (value) =>
-                                radioButtonGroups[index].label = value,
+                            onChanged: (value) => dampers[index].label = value,
                           ),
                         ),
                         IconButton(
@@ -91,7 +99,7 @@ class _AppState extends State<App> {
                                               MainAxisAlignment.center,
                                           children: <Widget>[
                                             Text(
-                                                'Are you sure you want to remove ${radioButtonGroups[index].label}?'),
+                                                'Are you sure you want to remove ${dampers[index].label}?'),
                                             const SizedBox(height: 15),
                                             Row(
                                               mainAxisAlignment:
@@ -128,15 +136,14 @@ class _AppState extends State<App> {
                     const SizedBox(height: 16.0),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: radioButtonGroups[index].options.map((option) {
+                      children: dampers[index].positions.map((option) {
                         int optionIndex =
-                            radioButtonGroups[index].options.indexOf(option);
+                            dampers[index].positions.indexOf(option);
                         return Column(
                           children: [
                             Radio(
                               value: optionIndex,
-                              groupValue:
-                                  radioButtonGroups[index].selectedOptionIndex,
+                              groupValue: dampers[index].currentPosition,
                               onChanged: (int? value) =>
                                   updatedSelected(index, value),
                             ),
