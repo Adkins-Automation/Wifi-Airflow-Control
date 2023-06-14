@@ -23,6 +23,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  FirebaseAuth _auth = FirebaseAuth.instance;
   FirebaseFirestore db = FirebaseFirestore.instance;
   User? _user;
   List<Damper> dampers = [];
