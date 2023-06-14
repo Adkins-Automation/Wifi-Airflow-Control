@@ -107,10 +107,10 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Air Duct Damper Controller Demo',
+      title: 'iFlow',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text("Air Duct Damper Controller Demo"),
+          title: const Text("iFlow"),
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.account_circle),
@@ -313,9 +313,9 @@ class _AppState extends State<App> {
   }
 }
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Firebase.initializeApp(
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(App());
