@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 
 class Damper {
   String label;
@@ -19,13 +23,64 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  FirebaseFirestore db = FirebaseFirestore.instance;
+  User? _user;
   List<Damper> dampers = [];
 
-  void addNewRadioButtonGroup() {
-    setState(() {
-      dampers.add(Damper(
-          "Damper ${dampers.length + 1}", ["0", "25", "50", "75", "100"], 0));
-    });
+  @override
+  void initState() {
+    super.initState();
+    _initUser();
+  }
+
+  void _initUser() {
+    _user = _auth.currentUser;
+  }
+
+  Future<void> _signIn(String email, String password) async {
+    // Perform sign-in logic using Firebase Authentication
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      setState(() {
+        _user = userCredential.user;
+      });
+    } catch (e) {
+      // Handle sign-in errors
+      print('Sign-in failed: $e');
+    }
+  }
+
+  Future<void> _register(String email, String password) async {
+    // Perform registration logic using Firebase Authentication
+    try {
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      setState(() {
+        _user = userCredential.user;
+      });
+    } catch (e) {
+      // Handle registration errors
+      print('Registration failed: $e');
+    }
+  }
+
+  Future<void> _signOut() async {
+    // Perform sign-out logic using Firebase Authentication
+    try {
+      await _auth.signOut();
+      setState(() {
+        _user = null;
+      });
+    } catch (e) {
+      // Handle sign-out errors
+      print('Sign-out failed: $e');
+    }
   }
 
   void deleteRadioButtonGroup(int index) {
@@ -41,6 +96,13 @@ class _AppState extends State<App> {
     });
   }
 
+  void addNewRadioButtonGroup() {
+    setState(() {
+      dampers.add(Damper(
+          "Damper ${dampers.length + 1}", ["0", "25", "50", "75", "100"], 0));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -50,12 +112,94 @@ class _AppState extends State<App> {
           title: const Text("Air Duct Damper Controller Demo"),
           actions: <Widget>[
             IconButton(
-              icon: Icon(
-                Icons.settings,
-                color: Colors.white,
-              ),
+              icon: Icon(Icons.account_circle),
               onPressed: () {
-                // do something
+                if (_user == null) {
+                  final TextEditingController emailController =
+                      TextEditingController();
+                  final TextEditingController passwordController =
+                      TextEditingController();
+
+                  // Show sign-in/register options
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => Dialog(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Sign In',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            TextFormField(
+                              controller: emailController,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            TextFormField(
+                              controller: passwordController,
+                              obscureText: true,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Perform sign-in logic
+                                _signIn(
+                                  emailController.text.trim(),
+                                  passwordController.text.trim(),
+                                );
+                                Navigator.pop(context);
+                              },
+                              child: Text('Sign In'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  // Prompt to confirm sign out
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => Dialog(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Are you sure you want to sign out?',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Perform sign-out logic
+                                _signOut();
+                                Navigator.pop(context);
+                              },
+                              child: Text('Sign Out'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
               },
             )
           ],
@@ -78,7 +222,7 @@ class _AppState extends State<App> {
                             key: UniqueKey(),
                             initialValue: dampers[index].label,
                             decoration: InputDecoration(
-                              labelText: 'Zone Name',
+                              labelText: 'Damper Name',
                             ),
                             onChanged: (value) => dampers[index].label = value,
                           ),
@@ -169,5 +313,9 @@ class _AppState extends State<App> {
 }
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(App());
 }

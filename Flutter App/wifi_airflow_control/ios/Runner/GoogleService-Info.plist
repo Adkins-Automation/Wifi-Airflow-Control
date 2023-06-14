@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>772850286062-re1r9u49qs9fj0o7a3pigejqbq5djeus.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.772850286062-re1r9u49qs9fj0o7a3pigejqbq5djeus</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDdi2Ho5fjU6uDxt66ervMLScCVwa6oEZ8</string>
+	<key>GCM_SENDER_ID</key>
+	<string>772850286062</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.wifiAirflowControl</string>
+	<key>PROJECT_ID</key>
+	<string>iflow-fe711</string>
+	<key>STORAGE_BUCKET</key>
+	<string>iflow-fe711.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:772850286062:ios:f1363acac9045f9eebe2ff</string>
+</dict>
+</plist>
