@@ -101,90 +101,10 @@ class _MainPageState extends State<MainPage> {
             icon: Icon(Icons.account_circle),
             onPressed: () {
               if (_user == null) {
-                final TextEditingController emailController =
-                    TextEditingController();
-                final TextEditingController passwordController =
-                    TextEditingController();
-
-                // Show sign-in/register options
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) => Dialog(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          TextFormField(
-                            controller: emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Perform sign-in logic
-                              _signIn(
-                                emailController.text.trim(),
-                                passwordController.text.trim(),
-                              );
-                              Navigator.pop(context);
-                            },
-                            child: Text('Sign In'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+                showSignInDialog(context);
               } else {
                 // Prompt to confirm sign out
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) => Dialog(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Are you sure you want to sign out?',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Perform sign-out logic
-                              _signOut();
-                              Navigator.pop(context);
-                            },
-                            child: Text('Sign Out'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+                showSignOutDialog(context);
               }
             },
           )
@@ -291,6 +211,92 @@ class _MainPageState extends State<MainPage> {
         onPressed: addNewRadioButtonGroup,
         tooltip: 'Add new group',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void showSignInDialog(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
+    // Show sign-in/register options
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Sign In',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                ),
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  // Perform sign-in logic
+                  _signIn(
+                    emailController.text.trim(),
+                    passwordController.text.trim(),
+                  );
+                  Navigator.pop(context);
+                },
+                child: Text('Sign In'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void showSignOutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Are you sure you want to sign out?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  // Perform sign-out logic
+                  _signOut();
+                  Navigator.pop(context);
+                },
+                child: Text('Sign Out'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
