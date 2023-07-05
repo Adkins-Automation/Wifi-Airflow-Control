@@ -23,6 +23,21 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'iFlow',
+      home: MainPage(),
+    );
+  }
+}
+
+class MainPage extends StatefulWidget {
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   FirebaseFirestore db = FirebaseFirestore.instance;
   User? _user;
@@ -106,208 +121,204 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'iFlow',
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text("iFlow"),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.account_circle),
-              onPressed: () {
-                if (_user == null) {
-                  final TextEditingController emailController =
-                      TextEditingController();
-                  final TextEditingController passwordController =
-                      TextEditingController();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("iFlow"),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.account_circle),
+            onPressed: () {
+              if (_user == null) {
+                final TextEditingController emailController =
+                    TextEditingController();
+                final TextEditingController passwordController =
+                    TextEditingController();
 
-                  // Show sign-in/register options
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) => Dialog(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Sign In',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                // Show sign-in/register options
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => Dialog(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: emailController,
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: passwordController,
-                              obscureText: true,
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Perform sign-in logic
-                                _signIn(
-                                  emailController.text.trim(),
-                                  passwordController.text.trim(),
-                                );
-                                Navigator.pop(context);
-                              },
-                              child: Text('Sign In'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                } else {
-                  // Prompt to confirm sign out
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) => Dialog(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Are you sure you want to sign out?',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Perform sign-out logic
-                                _signOut();
-                                Navigator.pop(context);
-                              },
-                              child: Text('Sign Out'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-              },
-            )
-          ],
-        ),
-        body: ListView.builder(
-          itemCount: dampers.length,
-          itemBuilder: (context, index) {
-            print("$index, ${dampers[index]}");
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: UniqueKey(),
-                            initialValue: dampers[index].label,
-                            decoration: InputDecoration(
-                              labelText: 'Damper Name',
-                            ),
-                            onChanged: (value) => dampers[index].label = value,
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => showDialog(
-                              context: context,
-                              builder: (BuildContext context) => Dialog(
-                                      child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: <Widget>[
-                                            Text(
-                                                'Are you sure you want to remove ${dampers[index].label}?'),
-                                            const SizedBox(height: 15),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                TextButton(
-                                                  onPressed: () {
-                                                    deleteRadioButtonGroup(
-                                                        index);
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: const Text(
-                                                    'Delete',
-                                                    style: TextStyle(
-                                                        color: Colors.red),
-                                                  ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: const Text('Close'),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ))),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16.0),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: dampers[index].positions.map((option) {
-                        int optionIndex =
-                            dampers[index].positions.indexOf(option);
-                        return Column(
-                          children: [
-                            Radio(
-                              value: optionIndex,
-                              groupValue: dampers[index].currentPosition,
-                              onChanged: (int? value) =>
-                                  updatedSelected(index, value),
+                          SizedBox(height: 16),
+                          TextFormField(
+                            controller: emailController,
+                            decoration: InputDecoration(
+                              labelText: 'Email',
                             ),
-                            Text(option),
-                          ],
-                        );
-                      }).toList(),
+                          ),
+                          SizedBox(height: 16),
+                          TextFormField(
+                            controller: passwordController,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              // Perform sign-in logic
+                              _signIn(
+                                emailController.text.trim(),
+                                passwordController.text.trim(),
+                              );
+                              Navigator.pop(context);
+                            },
+                            child: Text('Sign In'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                );
+              } else {
+                // Prompt to confirm sign out
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => Dialog(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Are you sure you want to sign out?',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              // Perform sign-out logic
+                              _signOut();
+                              Navigator.pop(context);
+                            },
+                            child: Text('Sign Out'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
+          )
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: dampers.length,
+        itemBuilder: (context, index) {
+          print("$index, ${dampers[index]}");
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          key: UniqueKey(),
+                          initialValue: dampers[index].label,
+                          decoration: InputDecoration(
+                            labelText: 'Damper Name',
+                          ),
+                          onChanged: (value) => dampers[index].label = value,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => showDialog(
+                            context: context,
+                            builder: (BuildContext context) => Dialog(
+                                    child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Text(
+                                              'Are you sure you want to remove ${dampers[index].label}?'),
+                                          const SizedBox(height: 15),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  deleteRadioButtonGroup(index);
+                                                  Navigator.pop(context);
+                                                },
+                                                child: const Text(
+                                                  'Delete',
+                                                  style: TextStyle(
+                                                      color: Colors.red),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                },
+                                                child: const Text('Close'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ))),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: dampers[index].positions.map((option) {
+                      int optionIndex =
+                          dampers[index].positions.indexOf(option);
+                      return Column(
+                        children: [
+                          Radio(
+                            value: optionIndex,
+                            groupValue: dampers[index].currentPosition,
+                            onChanged: (int? value) =>
+                                updatedSelected(index, value),
+                          ),
+                          Text(option),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: addNewRadioButtonGroup,
-          tooltip: 'Add new group',
-          child: const Icon(Icons.add),
-        ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: addNewRadioButtonGroup,
+        tooltip: 'Add new group',
+        child: const Icon(Icons.add),
       ),
     );
   }
