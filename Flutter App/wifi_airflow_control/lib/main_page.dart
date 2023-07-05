@@ -135,50 +135,7 @@ class _MainPageState extends State<MainPage> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete),
-                        onPressed: () => showDialog(
-                            context: context,
-                            builder: (BuildContext context) => Dialog(
-                                    child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          Text(
-                                              'Are you sure you want to remove ${dampers[index].label}?'),
-                                          const SizedBox(height: 15),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  deleteRadioButtonGroup(index);
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text(
-                                                  'Delete',
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text('Close'),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ))),
+                        onPressed: () => showDeleteDamperDialog(context, index),
                       ),
                     ],
                   ),
@@ -213,6 +170,50 @@ class _MainPageState extends State<MainPage> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  void showDeleteDamperDialog(BuildContext context, int index) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) => Dialog(
+                child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                          'Are you sure you want to remove ${dampers[index].label}?'),
+                      const SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              deleteRadioButtonGroup(index);
+                              Navigator.pop(context);
+                            },
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )));
   }
 
   void showSignInDialog(BuildContext context) {
