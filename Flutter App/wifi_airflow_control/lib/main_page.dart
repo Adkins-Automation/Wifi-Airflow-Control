@@ -38,6 +38,17 @@ class _MainPageState extends State<MainPage> {
     } catch (e) {
       // Handle sign-in errors
       print('Sign-in failed: $e');
+      if (e.toString().startsWith("[firebase_auth/user-not-found]")) {
+        try {
+          UserCredential newUser = await _auth.createUserWithEmailAndPassword(
+              email: email, password: password);
+          setState(() {
+            _user = newUser.user;
+          });
+        } catch (ex) {
+          print('Registration failed: $ex');
+        }
+      }
     }
   }
 
