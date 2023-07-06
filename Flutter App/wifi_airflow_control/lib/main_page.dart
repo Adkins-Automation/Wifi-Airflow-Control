@@ -11,9 +11,10 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  FirebaseFirestore _db = FirebaseFirestore.instance;
   User? _user;
-  List<Damper> dampers = [];
+  List<Damper> _dampers = [];
+  bool _success = true;
 
   @override
   void initState() {
@@ -25,7 +26,7 @@ class _MainPageState extends State<MainPage> {
     _user = _auth.currentUser;
   }
 
-  Future<void> _signIn(String email, String password) async {
+  Future<bool> _signIn(String email, String password) async {
     // Perform sign-in logic using Firebase Authentication
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
@@ -35,24 +36,19 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = userCredential.user;
       });
+      return true;
     } catch (e) {
       // Handle sign-in errors
       print('Sign-in failed: $e');
       if (e.toString().startsWith("[firebase_auth/user-not-found]")) {
-        try {
-          UserCredential newUser = await _auth.createUserWithEmailAndPassword(
-              email: email, password: password);
-          setState(() {
-            _user = newUser.user;
-          });
-        } catch (ex) {
-          print('Registration failed: $ex');
-        }
+        return await _register(email, password);
       }
+
+      return false;
     }
   }
 
-  Future<void> _register(String email, String password) async {
+  Future<bool> _register(String email, String password) async {
     // Perform registration logic using Firebase Authentication
     try {
       UserCredential userCredential =
@@ -63,9 +59,11 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = userCredential.user;
       });
+      return true;
     } catch (e) {
       // Handle registration errors
       print('Registration failed: $e');
+      return false;
     }
   }
 
@@ -84,21 +82,21 @@ class _MainPageState extends State<MainPage> {
 
   void deleteRadioButtonGroup(int index) {
     setState(() {
-      print(dampers[index]);
-      dampers.removeAt(index);
+      print(_dampers[index]);
+      _dampers.removeAt(index);
     });
   }
 
   void updatedSelected(int index, int? value) {
     setState(() {
-      dampers[index].currentPosition = value!;
+      _dampers[index].currentPosition = value!;
     });
   }
 
   void addNewRadioButtonGroup() {
     setState(() {
-      dampers.add(Damper(
-          "Damper ${dampers.length + 1}", ["0", "25", "50", "75", "100"], 0));
+      _dampers.add(Damper(
+          "Damper ${_dampers.length + 1}", ["0", "25", "50", "75", "100"], 0));
     });
   }
 
@@ -122,9 +120,9 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
       body: ListView.builder(
-        itemCount: dampers.length,
+        itemCount: _dampers.length,
         itemBuilder: (context, index) {
-          print("$index, ${dampers[index]}");
+          print("$index, ${_dampers[index]}");
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -137,11 +135,11 @@ class _MainPageState extends State<MainPage> {
                       Expanded(
                         child: TextFormField(
                           key: UniqueKey(),
-                          initialValue: dampers[index].label,
+                          initialValue: _dampers[index].label,
                           decoration: InputDecoration(
                             labelText: 'Damper Name',
                           ),
-                          onChanged: (value) => dampers[index].label = value,
+                          onChanged: (value) => _dampers[index].label = value,
                         ),
                       ),
                       IconButton(
@@ -153,14 +151,14 @@ class _MainPageState extends State<MainPage> {
                   const SizedBox(height: 16.0),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: dampers[index].positions.map((option) {
+                    children: _dampers[index].positions.map((option) {
                       int optionIndex =
-                          dampers[index].positions.indexOf(option);
+                          _dampers[index].positions.indexOf(option);
                       return Column(
                         children: [
                           Radio(
                             value: optionIndex,
-                            groupValue: dampers[index].currentPosition,
+                            groupValue: _dampers[index].currentPosition,
                             onChanged: (int? value) =>
                                 updatedSelected(index, value),
                           ),
@@ -197,7 +195,7 @@ class _MainPageState extends State<MainPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text(
-                          'Are you sure you want to remove ${dampers[index].label}?'),
+                          'Are you sure you want to remove ${_dampers[index].label}?'),
                       const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -247,6 +245,12 @@ class _MainPageState extends State<MainPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (!_success) SizedBox(height: 16),
+              if (!_success)
+                Text("Invalid email or password",
+                    style: TextStyle(
+                      color: Colors.red,
+                    )),
               SizedBox(height: 16),
               TextFormField(
                 controller: emailController,
@@ -269,8 +273,25 @@ class _MainPageState extends State<MainPage> {
                   _signIn(
                     emailController.text.trim(),
                     passwordController.text.trim(),
-                  );
-                  Navigator.pop(context);
+                  ).then((success) => {
+                        if (success)
+                          {Navigator.pop(context)}
+                        else
+                          {
+                            _register(emailController.text.trim(),
+                                    passwordController.text.trim())
+                                .then((success) => {
+                                      if (success)
+                                        {Navigator.pop(context)}
+                                      else
+                                        {
+                                          setState(() {
+                                            _success = false;
+                                          })
+                                        }
+                                    })
+                          }
+                      });
                 },
                 child: Text('Sign In'),
               ),
