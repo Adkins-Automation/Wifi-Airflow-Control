@@ -14,7 +14,6 @@ class _MainPageState extends State<MainPage> {
   FirebaseFirestore _db = FirebaseFirestore.instance;
   User? _user;
   List<Damper> _dampers = [];
-  bool _success = true;
 
   @override
   void initState() {
@@ -232,73 +231,78 @@ class _MainPageState extends State<MainPage> {
     // Show sign-in/register options
     showDialog(
       context: context,
-      builder: (BuildContext context) => Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Sign In',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (!_success) SizedBox(height: 16),
-              if (!_success)
-                Text("Invalid email or password",
+      builder: (context) {
+        bool success_ = true;
+        return StatefulBuilder(builder: (context, setState) {
+          return Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Sign In',
                     style: TextStyle(
-                      color: Colors.red,
-                    )),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                ),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (!success_) SizedBox(height: 16),
+                  if (!success_)
+                    Text("Invalid email or password",
+                        style: TextStyle(
+                          color: Colors.red,
+                        )),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Perform sign-in logic
+                      _signIn(
+                        emailController.text.trim(),
+                        passwordController.text.trim(),
+                      ).then((success) => {
+                            if (success)
+                              {Navigator.pop(context)}
+                            else
+                              {
+                                _register(emailController.text.trim(),
+                                        passwordController.text.trim())
+                                    .then((success) => {
+                                          if (success)
+                                            {Navigator.pop(context)}
+                                          else
+                                            {
+                                              setState(() {
+                                                success_ = false;
+                                              })
+                                            }
+                                        })
+                              }
+                          });
+                    },
+                    child: Text('Sign In'),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                ),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Perform sign-in logic
-                  _signIn(
-                    emailController.text.trim(),
-                    passwordController.text.trim(),
-                  ).then((success) => {
-                        if (success)
-                          {Navigator.pop(context)}
-                        else
-                          {
-                            _register(emailController.text.trim(),
-                                    passwordController.text.trim())
-                                .then((success) => {
-                                      if (success)
-                                        {Navigator.pop(context)}
-                                      else
-                                        {
-                                          setState(() {
-                                            _success = false;
-                                          })
-                                        }
-                                    })
-                          }
-                      });
-                },
-                child: Text('Sign In'),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
+          );
+        });
+      },
     );
   }
 
