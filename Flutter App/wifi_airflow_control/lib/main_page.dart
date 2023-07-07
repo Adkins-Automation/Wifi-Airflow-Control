@@ -227,6 +227,7 @@ class _MainPageState extends State<MainPage> {
   void showSignInDialog(BuildContext context) {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
+    final scaffold = ScaffoldMessenger.of(context);
 
     // Show sign-in/register options
     showDialog(
@@ -275,25 +276,26 @@ class _MainPageState extends State<MainPage> {
                       _signIn(
                         emailController.text.trim(),
                         passwordController.text.trim(),
-                      ).then((success) => {
-                            if (success)
-                              {Navigator.pop(context)}
-                            else
-                              {
-                                _register(emailController.text.trim(),
-                                        passwordController.text.trim())
-                                    .then((success) => {
-                                          if (success)
-                                            {Navigator.pop(context)}
-                                          else
-                                            {
-                                              setState(() {
-                                                success_ = false;
-                                              })
-                                            }
-                                        })
-                              }
+                      ).then((success) {
+                        if (success) {
+                          Navigator.pop(context);
+                        } else {
+                          _register(emailController.text.trim(),
+                                  passwordController.text.trim())
+                              .then((success) {
+                            if (success) {
+                              Navigator.pop(context);
+                              //todo - fix / not showing
+                              scaffold.showSnackBar(SnackBar(
+                                  content: Text("Account registered")));
+                            } else {
+                              setState(() {
+                                success_ = false;
+                              });
+                            }
                           });
+                        }
+                      });
                     },
                     child: Text('Sign In'),
                   ),
