@@ -25,7 +25,7 @@ class _MainPageState extends State<MainPage> {
     _user = _auth.currentUser;
   }
 
-  Future<bool> _signIn(String email, String password) async {
+  Future<String> _signIn(String email, String password) async {
     // Perform sign-in logic using Firebase Authentication
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
@@ -35,15 +35,15 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         _user = userCredential.user;
       });
-      return true;
+      return "pass";
     } catch (e) {
       // Handle sign-in errors
       print('Sign-in failed: $e');
       if (e.toString().startsWith("[firebase_auth/user-not-found]")) {
-        return await _register(email, password);
+        return "user-not-found";
       }
 
-      return false;
+      return "fail";
     }
   }
 
@@ -276,16 +276,21 @@ class _MainPageState extends State<MainPage> {
                       _signIn(
                         emailController.text.trim(),
                         passwordController.text.trim(),
-                      ).then((success) {
-                        if (success) {
+                      ).then((response) {
+                        if (response == "pass") {
+                          scaffold.showSnackBar(
+                              SnackBar(content: Text("Signed In")));
                           Navigator.pop(context);
-                        } else {
+                        } else if (response == "fail") {
+                          setState(() {
+                            success_ = false;
+                          });
+                        } else if (response == "user-not-found") {
                           _register(emailController.text.trim(),
                                   passwordController.text.trim())
                               .then((success) {
                             if (success) {
                               Navigator.pop(context);
-                              //todo - fix / not showing
                               scaffold.showSnackBar(SnackBar(
                                   content: Text("Account registered")));
                             } else {
