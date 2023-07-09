@@ -19,6 +19,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _initUser();
+    _loadDampers();
   }
 
   void _initUser() {
@@ -72,6 +73,7 @@ class _MainPageState extends State<MainPage> {
       await _auth.signOut();
       setState(() {
         _user = null;
+        _dampers = List.empty();
       });
     } catch (e) {
       // Handle sign-out errors
@@ -79,23 +81,57 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  void _loadDampers() {
+    _db.collection("dampers").doc(_auth.currentUser?.uid).get().then((doc) {
+      if (doc.exists) {
+        final dampersData = doc.data()?['dampers'] as List<dynamic>;
+        setState(() {
+          _dampers = dampersData
+              .map((data) => Damper(
+                    data['label'] ?? '',
+                    data['currentPosition'] ?? 0,
+                  ))
+              .toList();
+        });
+      }
+    });
+  }
+
+  void _updateDampers() {
+    final userDocRef = _db.collection("dampers").doc(_auth.currentUser?.uid);
+    final dampersData = _dampers.map((damper) {
+      return {
+        'label': damper.label,
+        'currentPosition': damper.currentPosition,
+      };
+    }).toList();
+
+    userDocRef.update({'dampers': dampersData}).then((_) {
+      print("Dampers updated successfully in Firestore");
+    }).catchError((error) {
+      print("Error updating dampers in Firestore: $error");
+    });
+  }
+
   void deleteRadioButtonGroup(int index) {
     setState(() {
       print(_dampers[index]);
       _dampers.removeAt(index);
+      _updateDampers();
     });
   }
 
   void updatedSelected(int index, int? value) {
     setState(() {
       _dampers[index].currentPosition = value!;
+      _updateDampers();
     });
   }
 
   void addNewRadioButtonGroup() {
     setState(() {
-      _dampers.add(Damper(
-          "Damper ${_dampers.length + 1}", ["0", "25", "50", "75", "100"], 0));
+      _dampers.add(Damper("Damper ${_dampers.length + 1}", 0));
+      _updateDampers();
     });
   }
 
@@ -138,7 +174,10 @@ class _MainPageState extends State<MainPage> {
                           decoration: InputDecoration(
                             labelText: 'Damper Name',
                           ),
-                          onChanged: (value) => _dampers[index].label = value,
+                          onChanged: (value) {
+                            _dampers[index].label = value;
+                            _updateDampers();
+                          },
                         ),
                       ),
                       IconButton(
@@ -150,9 +189,9 @@ class _MainPageState extends State<MainPage> {
                   const SizedBox(height: 16.0),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _dampers[index].positions.map((option) {
+                    children: ["0", "25", "50", "75", "100"].map((option) {
                       int optionIndex =
-                          _dampers[index].positions.indexOf(option);
+                          ["0", "25", "50", "75", "100"].indexOf(option);
                       return Column(
                         children: [
                           Radio(
@@ -280,6 +319,7 @@ class _MainPageState extends State<MainPage> {
                         if (response == "pass") {
                           scaffold.showSnackBar(
                               SnackBar(content: Text("Signed In")));
+                          _loadDampers();
                           Navigator.pop(context);
                         } else if (response == "fail") {
                           setState(() {
@@ -290,9 +330,13 @@ class _MainPageState extends State<MainPage> {
                                   passwordController.text.trim())
                               .then((success) {
                             if (success) {
-                              Navigator.pop(context);
                               scaffold.showSnackBar(SnackBar(
                                   content: Text("Account registered")));
+                              _db
+                                  .collection("dampers")
+                                  .doc(_auth.currentUser?.uid)
+                                  .set({});
+                              Navigator.pop(context);
                             } else {
                               setState(() {
                                 success_ = false;
