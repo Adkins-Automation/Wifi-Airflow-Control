@@ -34,3 +34,27 @@ Milestones
 
 GitHub Repo
 https://github.com/Adkins-Automation/Wifi-Airflow-Control
+
+TODO:
+
+1. Implement firebase library into Arduino script
+	a. https://www.youtube.com/watch?v=sgk-qh7rY94&list=PLwqAyHs1Wleg0F_mzKPY0au8mybVEXrgN&index=5&t=484s&ab_channel=CodeWithibad
+	
+2. Device setup
+	a. connect via bluetooth
+	b. share WiFi credentials
+	c. add device to account
+
+3. Attach motor to damper axle
+	a. identify, acquire, and install proper coupler
+
+3. Simplify circuit
+	a. single power source
+
+4. Reduce hardware profile
+	a. eliminate wires and breadboard
+
+5. Design/create housing for hardware components
+	a. use 3d modeling software
+	b. 3d print model
+	c. package components into geometry
