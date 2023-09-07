@@ -7,11 +7,11 @@
   "secrets": [
     {
       "name": "SECRET_OPTIONAL_PASS",
-      "value": ""
+      "value": "mme9h4xpeq9mtdw"
     },
     {
       "name": "SECRET_SSID",
-      "value": ""
+      "value": "Zenfone 9_3070"
     }
   ],
   "included_libs": []
