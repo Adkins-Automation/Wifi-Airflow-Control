@@ -128,7 +128,16 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void addNewRadioButtonGroup() {
+  void addNewDamper() {
+    /*
+    todo
+    1. scan/type code
+    2. connect via bluetooth
+    -- get wifi credentials???
+    3. send wifi credentials
+    4. wait for device to connect to wifi
+    5. add damper to account
+    */
     setState(() {
       _dampers.add(Damper("Damper ${_dampers.length + 1}", 0));
       _updateDampers();
@@ -212,8 +221,8 @@ class _MainPageState extends State<MainPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addNewRadioButtonGroup,
-        tooltip: 'Add new group',
+        onPressed: addNewDamper,
+        tooltip: 'Add new device',
         child: const Icon(Icons.add),
       ),
     );
