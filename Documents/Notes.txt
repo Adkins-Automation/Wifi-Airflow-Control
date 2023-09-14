@@ -35,6 +35,9 @@ Milestones
 GitHub Repo
 https://github.com/Adkins-Automation/Wifi-Airflow-Control
 
+Senior Design Contract
+https://docs.google.com/document/d/1w0h4E4IMKCQUFEUXsuTDHCocnxzenAxZ/edit?usp=sharing&ouid=109732314801132603892&rtpof=true&sd=true
+
 TODO:
 
 1. Implement firebase library into Arduino script
