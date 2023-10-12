@@ -31,7 +31,6 @@ dependencies:
   path: any
   flutter:
     sdk: flutter
-  path: any
 
 
 
