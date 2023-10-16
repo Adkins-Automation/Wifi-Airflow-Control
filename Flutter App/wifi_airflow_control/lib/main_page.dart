@@ -217,6 +217,17 @@ class _MainPageState extends State<MainPage> {
                       );
                     }).toList(),
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children:<Widget>[
+                      Slider(
+                        value: 0, 
+                        onChanged: null,
+                        min: 0,
+                        max: 100,
+                      )
+                    ],
+                  ),
                 ],
               ),
             ),
