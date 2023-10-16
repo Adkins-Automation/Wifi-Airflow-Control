@@ -19,11 +19,14 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _initUser();
-    _loadDampers();
   }
 
   void _initUser() {
+    if (_auth.currentUser == null) {
+      return;
+    }
     _user = _auth.currentUser;
+    _loadDampers();
   }
 
   Future<String> _signIn(String email, String password) async {
