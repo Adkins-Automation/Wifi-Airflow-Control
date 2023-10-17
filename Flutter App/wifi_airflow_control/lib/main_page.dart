@@ -7,6 +7,7 @@ import 'damper.dart';
 class MainPage extends StatefulWidget {
   @override
   State<MainPage> createState() => _MainPageState();
+  
 }
 
 class _MainPageState extends State<MainPage> {
@@ -14,12 +15,13 @@ class _MainPageState extends State<MainPage> {
   FirebaseFirestore _db = FirebaseFirestore.instance;
   User? _user;
   List<Damper> _dampers = [];
+  double value = 50;
 
   @override
   void initState() {
     super.initState();
     _initUser();
-    _loadDampers();
+   // _loadDampers();
   }
 
   void _initUser() {
@@ -146,6 +148,11 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double min = 0;
+    final double max = 100;
+    
+  
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("iFlow"),
@@ -215,16 +222,34 @@ class _MainPageState extends State<MainPage> {
                     }).toList(),
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    
+                    
+                  mainAxisAlignment: MainAxisAlignment.center,
                     children:<Widget>[
-                      Slider(
-                        value: 0, 
-                        onChanged: null,
-                        min: 0,
-                        max: 100,
+                      //buildSliderLabel(min),
+                      SizedBox(
+                        width: 300 ,
+                        child: Slider(
+                          value: value,
+                          onChanged: (value) => setState(() => this.value =value),
+                          min: min,
+                          max: max,
+                          activeColor: Colors.green,
+                          inactiveColor: Colors.blue,
+                        ),
                       )
                     ],
+                  
+                  
+                  
                   ),
+                  
+
+
+
+
+
+
                 ],
               ),
             ),
@@ -238,6 +263,15 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
+
+  //Widget buildSliderLabel(){
+    //final double min = 0;
+    //final double max = 100;
+
+   // return Container(
+
+    //)
+ // }
 
   void showDeleteDamperDialog(BuildContext context, int index) {
     showDialog(
