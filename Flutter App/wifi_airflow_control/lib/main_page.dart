@@ -85,6 +85,26 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  void _addDamper() async {
+    /*
+    todo
+    1. scan/type code
+    2. connect via bluetooth
+    -- get wifi credentials???
+    3. send wifi credentials
+    4. wait for device to connect to wifi
+    5. add damper to account
+    */
+    String? damperId = await _showDamperIdDialog(context);
+    if (damperId != null && damperId.isNotEmpty) {
+      setState(() {
+        _dampers[damperId] =
+            Damper(damperId, "Damper ${_dampers.length + 1}", 0);
+        _updateDampers();
+      });
+    }
+  }
+
   void _loadDampers() {
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
@@ -127,23 +147,6 @@ class _MainPageState extends State<MainPage> {
   void updatedSelected(String id, int? value) {
     setState(() {
       _dampers[id]?.currentPosition = value!;
-      _updateDampers();
-    });
-  }
-
-  void addNewDamper() {
-    /*
-    todo
-    1. scan/type code
-    2. connect via bluetooth
-    -- get wifi credentials???
-    3. send wifi credentials
-    4. wait for device to connect to wifi
-    5. add damper to account
-    */
-    final id = "damper${_dampers.length + 1}";
-    setState(() {
-      _dampers[id] = Damper(id, "Damper ${_dampers.length + 1}", 0);
       _updateDampers();
     });
   }
@@ -222,7 +225,7 @@ class _MainPageState extends State<MainPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addNewDamper,
+        onPressed: _addDamper,
         tooltip: 'Add new device',
         child: const Icon(Icons.add),
       ),
@@ -393,6 +396,39 @@ class _MainPageState extends State<MainPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<String?> _showDamperIdDialog(BuildContext context) async {
+    String? damperId;
+
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enter Damper ID'),
+          content: TextField(
+            onChanged: (value) {
+              damperId = value;
+            },
+            decoration: InputDecoration(hintText: "ID"),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('CANCEL'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(damperId);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
