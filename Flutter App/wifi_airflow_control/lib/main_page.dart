@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 import 'damper.dart';
+import 'damper_slider.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -202,20 +203,15 @@ class _MainPageState extends State<MainPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Slider(
-                        key: UniqueKey(),
-                        value: _dampers.values
-                            .elementAt(index)
-                            .currentPosition
-                            .toDouble(),
-                        onChanged: (double changingValue) => {},
-                        onChangeEnd: (double endValue) => updatedSelected(
-                            _dampers.values.elementAt(index).id,
-                            endValue.toInt()),
-                        min: 0,
-                        max: 100,
-                        activeColor: Colors.green,
-                        inactiveColor: Colors.blue,
+                      Expanded(
+                        child: DamperSlider(
+                          initialValue:
+                              _dampers.values.elementAt(index).currentPosition,
+                          onEnd: (endValue) {
+                            updatedSelected(
+                                _dampers.values.elementAt(index).id, endValue);
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -232,15 +228,6 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
-
-  //Widget buildSliderLabel(){
-  //final double min = 0;
-  //final double max = 100;
-
-  // return Container(
-
-  //)
-  // }
 
   void showDeleteDamperDialog(BuildContext context, int index) {
     showDialog(
