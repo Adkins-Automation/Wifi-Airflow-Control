@@ -1,11 +1,12 @@
 class Damper {
+  String id;
   String label;
   int currentPosition;
 
-  Damper(this.label, this.currentPosition);
+  Damper(this.id, this.label, this.currentPosition);
 
   @override
   String toString() {
-    return "$label, $currentPosition";
+    return "$id, $label, $currentPosition";
   }
 }
