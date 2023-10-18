@@ -15,7 +15,6 @@ class _MainPageState extends State<MainPage> {
       .refFromURL("https://iflow-fe711-default-rtdb.firebaseio.com/");
   User? _user;
   Map<String, Damper> _dampers = {};
-  double value = 50;
 
   @override
   void initState() {
@@ -150,9 +149,6 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    const double min = 0;
-    const double max = 100;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("iFlow"),
@@ -204,39 +200,23 @@ class _MainPageState extends State<MainPage> {
                   ),
                   const SizedBox(height: 16.0),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [0, 25, 50, 75, 100].map((option) {
-                      return Column(
-                        children: [
-                          Radio(
-                            value: option,
-                            groupValue: _dampers.values
-                                .elementAt(index)
-                                .currentPosition,
-                            onChanged: (int? value) => updatedSelected(
-                                _dampers.values.elementAt(index).id, option),
-                          ),
-                          Text(option.toString()),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      //buildSliderLabel(min),
-                      SizedBox(
-                        width: 300,
-                        child: Slider(
-                          value: value,
-                          onChanged: (value) =>
-                              setState(() => this.value = value),
-                          min: min,
-                          max: max,
-                          activeColor: Colors.green,
-                          inactiveColor: Colors.blue,
-                        ),
-                      )
+                      Slider(
+                        key: UniqueKey(),
+                        value: _dampers.values
+                            .elementAt(index)
+                            .currentPosition
+                            .toDouble(),
+                        onChanged: (double changingValue) => {},
+                        onChangeEnd: (double endValue) => updatedSelected(
+                            _dampers.values.elementAt(index).id,
+                            endValue.toInt()),
+                        min: 0,
+                        max: 100,
+                        activeColor: Colors.green,
+                        inactiveColor: Colors.blue,
+                      ),
                     ],
                   ),
                 ],
