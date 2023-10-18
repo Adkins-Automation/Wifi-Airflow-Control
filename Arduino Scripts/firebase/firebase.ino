@@ -11,6 +11,9 @@ FirebaseData fbdo;
 
 Servo myservo;
 int position = 0; // Initial position
+const String USER_ID = "ecnlzD6NLnbXqx47qcaeU2KgfDr2";
+const String DAMPER_ID = "damper1";
+const String POSITION_PATH = USER_ID + "/" + DAMPER_ID + "/position"; // firebase path to position value of this damper
 
 void setup() {
   Serial.begin(115200);
@@ -38,15 +41,13 @@ void setup() {
   // Set initial servo position
   myservo.write(position);
   
-  String userPath = "users/derrick,l,adkins@gmail,com"; // Convert email to safe format for Firebase keys
-  Firebase.setInt(fbdo, userPath + "/servoPosition", position);
+  Firebase.setInt(fbdo, POSITION_PATH, position);
 }
 
 void loop() {
   // Check Firebase for servo position updates
-  String userPath = "users/derrick,l,adkins@gmail,com"; // Convert email to safe format for Firebase keys
   
-  if (Firebase.getInt(fbdo, userPath + "/servoPosition")) {
+  if (Firebase.getInt(fbdo, POSITION_PATH)) {
     int newPosition = fbdo.intData();
     if (newPosition != position) {
       myservo.write(newPosition);

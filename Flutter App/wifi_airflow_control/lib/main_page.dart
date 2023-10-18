@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import 'damper.dart';
 
 class MainPage extends StatefulWidget {
   @override
   State<MainPage> createState() => _MainPageState();
-  
 }
 
 class _MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
-  FirebaseFirestore _db = FirebaseFirestore.instance;
+  final _db = FirebaseDatabase.instance
+      .refFromURL("https://iflow-fe711-default-rtdb.firebaseio.com/");
   User? _user;
-  List<Damper> _dampers = [];
+  Map<String, Damper> _dampers = {};
   double value = 50;
 
   @override
   void initState() {
     super.initState();
     _initUser();
-   // _loadDampers();
   }
 
   void _initUser() {
     _user = _auth.currentUser;
+    if (_user != null) {
+      _loadDampers();
+    }
   }
 
   Future<String> _signIn(String email, String password) async {
@@ -75,7 +77,7 @@ class _MainPageState extends State<MainPage> {
       await _auth.signOut();
       setState(() {
         _user = null;
-        _dampers = List.empty();
+        _dampers = {};
       });
     } catch (e) {
       // Handle sign-out errors
@@ -84,48 +86,47 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _loadDampers() {
-    _db.collection("dampers").doc(_auth.currentUser?.uid).get().then((doc) {
-      if (doc.exists) {
-        final dampersData = doc.data()?['dampers'] as List<dynamic>;
+    _db.child(_auth.currentUser!.uid).get().then((snapshot) {
+      if (snapshot.exists) {
+        final dampersData = snapshot.value as Map<dynamic, dynamic>;
+        print(dampersData);
         setState(() {
-          _dampers = dampersData
-              .map((data) => Damper(
-                    data['label'] ?? '',
-                    data['currentPosition'] ?? 0,
-                  ))
-              .toList();
+          _dampers = dampersData.map((id, data) => MapEntry(
+              id,
+              Damper(
+                id,
+                data['label'] ?? '',
+                data['position'] ?? 0,
+              )));
         });
       }
     });
   }
 
   void _updateDampers() {
-    final userDocRef = _db.collection("dampers").doc(_auth.currentUser?.uid);
-    final dampersData = _dampers.map((damper) {
-      return {
-        'label': damper.label,
-        'currentPosition': damper.currentPosition,
-      };
-    }).toList();
-
-    userDocRef.update({'dampers': dampersData}).then((_) {
-      print("Dampers updated successfully in Firestore");
+    final dampersData = {
+      for (var damper in _dampers.values)
+        damper.id: {'label': damper.label, 'position': damper.currentPosition}
+    };
+    _db.child(_auth.currentUser!.uid).set(dampersData).then((_) {
+      print("Dampers updated successfully in Realtime Database");
     }).catchError((error) {
-      print("Error updating dampers in Firestore: $error");
+      print("Error updating dampers in Realtime Database: $error");
+      print(dampersData);
     });
   }
 
-  void deleteRadioButtonGroup(int index) {
+  void deleteRadioButtonGroup(String id) {
     setState(() {
-      print(_dampers[index]);
-      _dampers.removeAt(index);
+      print(_dampers[id]);
+      _dampers.remove(id);
       _updateDampers();
     });
   }
 
-  void updatedSelected(int index, int? value) {
+  void updatedSelected(String id, int? value) {
     setState(() {
-      _dampers[index].currentPosition = value!;
+      _dampers[id]?.currentPosition = value!;
       _updateDampers();
     });
   }
@@ -140,18 +141,17 @@ class _MainPageState extends State<MainPage> {
     4. wait for device to connect to wifi
     5. add damper to account
     */
+    final id = "damper${_dampers.length + 1}";
     setState(() {
-      _dampers.add(Damper("Damper ${_dampers.length + 1}", 0));
+      _dampers[id] = Damper(id, "Damper ${_dampers.length + 1}", 0);
       _updateDampers();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final double min = 0;
-    final double max = 100;
-    
-  
+    const double min = 0;
+    const double max = 100;
 
     return Scaffold(
       appBar: AppBar(
@@ -173,7 +173,7 @@ class _MainPageState extends State<MainPage> {
       body: ListView.builder(
         itemCount: _dampers.length,
         itemBuilder: (context, index) {
-          print("$index, ${_dampers[index]}");
+          print("$index, ${_dampers.values.elementAt(index)}");
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -186,12 +186,12 @@ class _MainPageState extends State<MainPage> {
                       Expanded(
                         child: TextFormField(
                           key: UniqueKey(),
-                          initialValue: _dampers[index].label,
+                          initialValue: _dampers.values.elementAt(index).label,
                           decoration: InputDecoration(
                             labelText: 'Damper Name',
                           ),
                           onChanged: (value) {
-                            _dampers[index].label = value;
+                            _dampers.values.elementAt(index).label = value;
                             _updateDampers();
                           },
                         ),
@@ -205,33 +205,32 @@ class _MainPageState extends State<MainPage> {
                   const SizedBox(height: 16.0),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: ["0", "25", "50", "75", "100"].map((option) {
-                      int optionIndex =
-                          ["0", "25", "50", "75", "100"].indexOf(option);
+                    children: [0, 25, 50, 75, 100].map((option) {
                       return Column(
                         children: [
                           Radio(
-                            value: optionIndex,
-                            groupValue: _dampers[index].currentPosition,
-                            onChanged: (int? value) =>
-                                updatedSelected(index, value),
+                            value: option,
+                            groupValue: _dampers.values
+                                .elementAt(index)
+                                .currentPosition,
+                            onChanged: (int? value) => updatedSelected(
+                                _dampers.values.elementAt(index).id, option),
                           ),
-                          Text(option),
+                          Text(option.toString()),
                         ],
                       );
                     }).toList(),
                   ),
                   Row(
-                    
-                    
-                  mainAxisAlignment: MainAxisAlignment.center,
-                    children:<Widget>[
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
                       //buildSliderLabel(min),
                       SizedBox(
-                        width: 300 ,
+                        width: 300,
                         child: Slider(
                           value: value,
-                          onChanged: (value) => setState(() => this.value =value),
+                          onChanged: (value) =>
+                              setState(() => this.value = value),
                           min: min,
                           max: max,
                           activeColor: Colors.green,
@@ -239,17 +238,7 @@ class _MainPageState extends State<MainPage> {
                         ),
                       )
                     ],
-                  
-                  
-                  
                   ),
-                  
-
-
-
-
-
-
                 ],
               ),
             ),
@@ -265,13 +254,13 @@ class _MainPageState extends State<MainPage> {
   }
 
   //Widget buildSliderLabel(){
-    //final double min = 0;
-    //final double max = 100;
+  //final double min = 0;
+  //final double max = 100;
 
-   // return Container(
+  // return Container(
 
-    //)
- // }
+  //)
+  // }
 
   void showDeleteDamperDialog(BuildContext context, int index) {
     showDialog(
@@ -287,14 +276,15 @@ class _MainPageState extends State<MainPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text(
-                          'Are you sure you want to remove ${_dampers[index].label}?'),
+                          'Are you sure you want to remove ${_dampers.values.elementAt(index).label}?'),
                       const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           TextButton(
                             onPressed: () {
-                              deleteRadioButtonGroup(index);
+                              deleteRadioButtonGroup(
+                                  _dampers.values.elementAt(index).id);
                               Navigator.pop(context);
                             },
                             child: const Text(
@@ -386,10 +376,6 @@ class _MainPageState extends State<MainPage> {
                             if (success) {
                               scaffold.showSnackBar(SnackBar(
                                   content: Text("Account registered")));
-                              _db
-                                  .collection("dampers")
-                                  .doc(_auth.currentUser?.uid)
-                                  .set({});
                               Navigator.pop(context);
                             } else {
                               setState(() {
