@@ -45,6 +45,8 @@ String ssid, password, userId;
 void setup() {
   Serial.begin(9600);
   while (!Serial);  // Wait for serial connection
+  Serial.println();
+  Serial.println("setup started");
 
   byte mac[6];
   WiFi.macAddress(mac);
@@ -59,16 +61,25 @@ void setup() {
   WifiCredentials storedCredentials = flashStorage.read();
 
   if (!storedCredentials.initialized) {
+    Serial.println("damper not initialized");
     // 2. Initialize BLE and wait for central device to provide values
     setupBLE();
     
+    Serial.println("polling BLE");
     while (!ssidCharacteristic.written() || !passwordCharacteristic.written() || !userIdCharacteristic.written()) {
+      Serial.print(".");
       BLE.poll();
+      delay(1000);
     }
+    Serial.println();
     
     ssid = ssidCharacteristic.value();
     password = passwordCharacteristic.value();
     userId = userIdCharacteristic.value();
+
+    Serial.println("ssid: " + ssid);
+    Serial.println("password: " + password);
+    Serial.println("userId: " + userId);
 
     // 3. Store received values in flash storage
     WifiCredentials newCredentials;
@@ -80,9 +91,14 @@ void setup() {
     
     BLE.end();  // Stop BLE services
   } else {
+    Serial.println("damper initialized");
     ssid = String(storedCredentials.ssid);
     password = String(storedCredentials.password);
     userId = String(storedCredentials.userId);
+
+    Serial.println("ssid: " + ssid);
+    Serial.println("password: " + password);
+    Serial.println("userId: " + userId);
   }
 
   // 4. Connect to WiFi
@@ -103,7 +119,7 @@ void setup() {
 
 void loop() {
   // Check Firebase for servo position updates
-  
+  Serial.println("Getting position...");
   if (Firebase.getInt(fbdo, positionPath)) {
     int newPosition = fbdo.intData();
     if (newPosition != position) {
@@ -124,8 +140,12 @@ void setupBLE() {
     while (1);
   }
   
-  BLE.setLocalName(macAddressInDecimal.c_str());
-  BLE.setAdvertisedService(wifiService);
+  BLE.setDeviceName(macAddressInDecimal.c_str());
+
+  if(!BLE.setAdvertisedService(wifiService)){
+    Serial.println("Failed to set advertised service");
+    while (1);
+  }
   
   wifiService.addCharacteristic(ssidCharacteristic);
   wifiService.addCharacteristic(passwordCharacteristic);
@@ -137,7 +157,8 @@ void setupBLE() {
   passwordCharacteristic.setValue("");
   userIdCharacteristic.setValue("");
   
-  BLE.advertise();
+  int result = BLE.advertise();
+  Serial.println("BLE advertise result: " + String(result));
 }
 
 void connectToWiFi() {
@@ -151,6 +172,7 @@ void connectToWiFi() {
 }
 
 void connectToFirebase() {
+  Serial.print("Connecting to firebase");
   Firebase.begin(DATABASE_URL, DATABASE_SECRET, ssid.c_str(), password.c_str());
   Firebase.reconnectWiFi(true);
 }

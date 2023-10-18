@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'damper.dart';
 import 'damper_slider.dart';
 
@@ -87,18 +89,85 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  void _connectToDamper(String damperId) {
-    flutterBlue.startScan(timeout: Duration(seconds: 5));
+  Future<bool> requestBluetoothScanPermission() async {
+    // This maps the permission_handler's Permission to the Android-specific string
+    Map<Permission, PermissionStatus> statuses =
+        await [Permission.bluetoothScan, Permission.bluetoothConnect].request();
+
+    print(statuses);
+
+    // if (statuses[Permission.bluetoothConnect]!.isGranted &&
+    //     statuses[Permission.bluetoothScan]!.isGranted) {
+    //   // Permission granted
+    //   print("bluetooth permissions granted");
+    //   return true;
+    // } else if (statuses[Permission.bluetoothConnect]!.isDenied) {
+    //   // Permission denied
+    // } else if (statuses[Permission.bluetoothConnect]!.isPermanentlyDenied) {
+    //   // The user opted to never again see the permission request dialog for this app.
+    //   // Open the app settings to allow the user to grant the permission.
+    //   openAppSettings();
+    // }
+    return true;
+  }
+
+  Future<void> _connectToDamper(
+      String damperId, String ssid, String password, String userId) async {
+    var granted = await requestBluetoothScanPermission();
+    if (!granted) return;
+    String targetServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
+    flutterBlue
+        .startScan(
+            //withServices: [Guid(targetServiceUUID)],
+            timeout: Duration(seconds: 15))
+        .catchError((error) {
+      print("Error starting scan: $error");
+    });
+
+    Set<String> seenDevices = {}; // Set to store unique device addresses
 
     // Listen to scan results
-    var subscription = flutterBlue.scanResults.listen((results) {
+    var subscription = flutterBlue.scanResults.listen((results) async {
       for (ScanResult result in results) {
+        if (!seenDevices.contains(result.device.id.toString())) {
+          // This is a new device
+          seenDevices.add(result.device.id.toString());
+
+          // Print device details
+          print('Device Name: ${result.device.name}');
+          print('Device ID: ${result.device.id}');
+          print('Device RSSI: ${result.rssi}');
+          print('-------------------------');
+        }
+
         if (result.device.name == damperId) {
           // Stop scanning
           flutterBlue.stopScan();
 
           // Connect to the selected device
-          result.device.connect();
+          await result.device.connect();
+
+          // Discover services after connecting to the device
+          List<BluetoothService> services =
+              await result.device.discoverServices();
+
+          // Find the right service (using the service UUID provided)
+          BluetoothService wifiService = services
+              .firstWhere((service) => service.uuid.toString() == "1800");
+
+          BluetoothCharacteristic ssidCharacteristic = wifiService
+              .characteristics
+              .firstWhere((c) => c.uuid.toString() == "2A00");
+          BluetoothCharacteristic passwordCharacteristic = wifiService
+              .characteristics
+              .firstWhere((c) => c.uuid.toString() == "2A01");
+          BluetoothCharacteristic userIdCharacteristic = wifiService
+              .characteristics
+              .firstWhere((c) => c.uuid.toString() == "2A04");
+
+          await ssidCharacteristic.write(utf8.encode(ssid));
+          await passwordCharacteristic.write(utf8.encode(password));
+          await userIdCharacteristic.write(utf8.encode(userId));
 
           // Optionally, you can disconnect after a timeout or after certain operations
           // result.device.disconnect();
@@ -112,23 +181,24 @@ class _MainPageState extends State<MainPage> {
       }
     });
 
-    // Remember to cancel subscription after done
-    subscription.cancel();
+    // Cancel the subscription after the scan timeout
+    Future.delayed(Duration(seconds: 15), () {
+      subscription.cancel();
+    });
   }
 
   void _addDamper() async {
-    /*
-    todo
-    1. scan/type code
-    2. connect via bluetooth
-    -- get wifi credentials???
-    3. send wifi credentials
-    4. wait for device to connect to wifi
-    5. add damper to account
-    */
-    String? damperId = await _showDamperIdDialog(context);
+    // var result = await _showNewDamperDialog(context);
+    // String? damperId = result?['damperId'];
+    // String? ssid = result?['ssid'];
+    // String? password = result?['password'];
+
+    String? damperId = "818231130243112";
+    String? ssid = "Zenfone 9_3070";
+    String? password = "mme9h4xpeq9mtdw";
+
     if (damperId != null && damperId.isNotEmpty) {
-      _connectToDamper(damperId);
+      _connectToDamper(damperId, ssid!, password!, _auth.currentUser!.uid);
     }
   }
 
@@ -426,19 +496,42 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Future<String?> _showDamperIdDialog(BuildContext context) async {
+  Future<Map<String, String?>?> _showNewDamperDialog(
+      BuildContext context) async {
     String? damperId;
+    String? ssid;
+    String? password;
 
-    return showDialog<String>(
+    return showDialog<Map<String, String?>>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Enter Damper ID'),
-          content: TextField(
-            onChanged: (value) {
-              damperId = value;
-            },
-            decoration: InputDecoration(hintText: "ID"),
+          title: Text('Enter Details'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                onChanged: (value) {
+                  damperId = value;
+                },
+                decoration: InputDecoration(hintText: "Damper ID"),
+              ),
+              SizedBox(height: 10), // Spacer
+              TextField(
+                onChanged: (value) {
+                  ssid = value;
+                },
+                decoration: InputDecoration(hintText: "SSID"),
+              ),
+              SizedBox(height: 10), // Spacer
+              TextField(
+                onChanged: (value) {
+                  password = value;
+                },
+                decoration: InputDecoration(hintText: "Password"),
+                obscureText: true, // To hide password input
+              ),
+            ],
           ),
           actions: <Widget>[
             TextButton(
@@ -450,7 +543,11 @@ class _MainPageState extends State<MainPage> {
             TextButton(
               child: Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop(damperId);
+                Navigator.of(context).pop({
+                  'damperId': damperId,
+                  'ssid': ssid,
+                  'password': password,
+                });
               },
             ),
           ],
