@@ -12,13 +12,25 @@ FirebaseData fbdo;
 Servo myservo;
 int position = 0; // Initial position
 const String USER_ID = "ecnlzD6NLnbXqx47qcaeU2KgfDr2";
-const String DAMPER_ID = "damper1";
-const String POSITION_PATH = USER_ID + "/" + DAMPER_ID + "/position"; // firebase path to position value of this damper
+String macAddressInDecimal; // used as damper id
+String positionPath; // firebase path to position value of this damper
 
 void setup() {
   Serial.begin(115200);
+  while (!Serial); // Wait until the serial connection is established
   delay(100);
   Serial.println();
+  
+  byte mac[6];
+  WiFi.macAddress(mac);
+  
+  for (int i = 5; i >= 0; i--) {
+    macAddressInDecimal += String(mac[i]);
+  }
+
+  Serial.println("Damper ID: " + macAddressInDecimal);
+
+  positionPath = USER_ID + "/" + macAddressInDecimal + "/position";
 
   Serial.print("Connecting to Wi-Fi");
   int status = WL_IDLE_STATUS;
@@ -41,13 +53,13 @@ void setup() {
   // Set initial servo position
   myservo.write(position);
   
-  Firebase.setInt(fbdo, POSITION_PATH, position);
+  Firebase.setInt(fbdo, positionPath, position);
 }
 
 void loop() {
   // Check Firebase for servo position updates
   
-  if (Firebase.getInt(fbdo, POSITION_PATH)) {
+  if (Firebase.getInt(fbdo, positionPath)) {
     int newPosition = fbdo.intData();
     if (newPosition != position) {
       myservo.write(newPosition);
