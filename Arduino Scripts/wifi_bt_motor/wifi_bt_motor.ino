@@ -1,74 +1,125 @@
 #include <Stepper.h>
 #include <SoftwareSerial.h>
-
-SoftwareSerial bt(0,1);
-const int stepsPerRev = 200;
-Stepper motor(stepsPerRev, 8, 9, 10, 11);
-SoftwareSerial wifiSerial(2, 3);      // RX, TX for ESP8266
+#define TIMEOUT 5000 // mS
+SoftwareSerial bt(2, 3);
+const int stepsPerRev = 2048;
+const int stepsPer90 = 512;
+const long rpm = 640;
+Stepper motor(32, 8, 10, 9, 11);
+SoftwareSerial wifi(0, 1);
 bool DEBUG = true;   //show more logs
 int responseTime = 10; //communication timeout
-
+int pos = 0;
+bool debugMode = false;
+const int LED = 13;
+ 
 
 void setup() {
   bt.begin(9600);
   Serial.begin(9600);
-  motor.setSpeed(50);
+  motor.setSpeed(rpm);
 
   pinMode(13,OUTPUT);  //set build in led as output
   // Open serial communications and wait for port to open esp8266:
-  Serial.begin(115200);
-  wifiSerial.begin(115200);
-  sendToWifi("AT+CWMODE=2",responseTime,DEBUG); // configure as access point
-  sendToWifi("AT+CIFSR",responseTime,DEBUG); // get ip address
-  sendToWifi("AT+CIPMUX=1",responseTime,DEBUG); // configure for multiple connections
-  sendToWifi("AT+CIPSERVER=1,80",responseTime,DEBUG); // turn on server on port 80
- 
-  sendToUno("Wifi connection is running!",responseTime,DEBUG);
+  wifi.begin(9600);
+  SendCommand("AT+RST", "Ready");
+  delay(5000);
+  SendCommand("AT+CWMODE=1","OK");
+  SendCommand("AT+CIFSR", "OK");
+  SendCommand("AT+CIPMUX=1","OK");
+  SendCommand("AT+CIPSERVER=1,80","OK");
 }
 
 void loop() {
+  if (debugMode){
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
+
   if (bt.available()) {
-    int btR = bt.read();
-    Serial.println(String(btR));
-    motor.step(btR);
-  }
-if(Serial.available()){
-     String message = readSerialMessage();
-    if(find(message,"debugEsp8266:")){
-      String result = sendToWifi(message.substring(13,message.length()),responseTime,DEBUG);
-      if(find(result,"OK"))
-        sendData("\nOK");
-      else
-        sendData("\nEr");
+    String btS = bt.readString();
+    //Serial.print("Received:");
+    //Serial.println(btS);
+    if(btS.equals("debug:ON")) debugMode = true;
+    else if(btS.equals("debug:OFF")) debugMode = false;
+    else if(btS.equals("pos")) Serial.println(pos);
+    else if(isInt(btS)){
+      if(debugMode){
+        step(btS.toInt());
+      }else{
+        int percent = btS.toInt();
+        if(percent >= 0 && percent <=100){
+          int steps = map(percent-pos, 0, 100, 0, stepsPer90);
+          pos = percent;
+          step(steps);
+          Serial.println("Success");
+        }
+      }
     }
   }
-  if(wifiSerial.available()){
-    
-    String message = readWifiSerialMessage();
-    
-    if(find(message,"esp8266:")){
-       String result = sendToWifi(message.substring(8,message.length()),responseTime,DEBUG);
-      if(find(result,"OK"))
-        sendData("\n"+result);
-      else
-        sendData("\nErrRead");               //At command ERROR CODE for Failed Executing statement
-    }else
-    if(find(message,"HELLO")){  //receives HELLO from wifi
-        sendData("\\nHI!");    //arduino says HI
-    }else if(find(message,"LEDON")){
-      //sending ph level:
-      digitalWrite(13,HIGH);
-    }else if(find(message,"LEDOFF")){
-      //sending ph level:
-      digitalWrite(13,LOW);
-    }
-    else{
-      sendData("\nErrRead");                 //Command ERROR CODE for UNABLE TO READ
+
+  if (wifi.available()) {
+    String wifiS = wifi.readString();
+    if(wifiS.equals("debug:ON")) debugMode = true;
+    else if(wifiS.equals("debug:OFF")) debugMode = false;
+    else if(wifiS.equals("pos")) Serial.println(pos);
+    else if(isInt(wifiS)){
+      if(debugMode){
+        step(wifiS.toInt());
+      }else{
+        int percent = wifiS.toInt();
+        if(percent >= 0 && percent <=100){
+          int steps = map(percent-pos, 0, 100, 0, stepsPer90);
+          pos = percent;
+          step(steps);
+          Serial.println("Success");
+        }
+      }
     }
   }
-  delay(responseTime);
 }
 
+boolean SendCommand(String cmd, String ack){
+  wifi.println(cmd); // Send "AT+" command to module
+  if (!echoFind(ack)) // timed out waiting for ack string
+    return true; // ack blank or ack found
+}
+ 
+boolean echoFind(String keyword){
+ byte current_char = 0;
+ byte keyword_length = keyword.length();
+ long deadline = millis() + TIMEOUT;
+ while(millis() < deadline){
+  if (wifi.available()){
+    char ch = wifi.read();
+    Serial.write(ch);
+    if (ch == keyword[current_char])
+      if (++current_char == keyword_length){
+       Serial.println();
+       return true;
+    }
+   }
+  }
+ return false; // Timed out
+} 
+
+void step(int steps){
+  //Serial1.print("Stepping:");
+  //Serial1.println(steps);
+  digitalWrite(13, HIGH);
+  motor.step(steps);
+  digitalWrite(13, LOW);
+}
+
+bool isInt(String in){
+  if(!(in.charAt(0) == '-' || isDigit(in.charAt(0)))) return false;
+  for(int i = 1; i < in.length(); i++){
+    if(!isDigit(in.charAt(i))) return false;
+  }
+  return true;
+}
 
 /*
 * Name: sendData
@@ -130,8 +181,8 @@ String  readSerialMessage(){
 String  readWifiSerialMessage(){
   char value[100]; 
   int index_count =0;
-  while(wifiSerial.available()>0){
-    value[index_count]=wifiSerial.read();
+  while(wifi.available()>0){
+    value[index_count]=wifi.read();
     index_count++;
     value[index_count] = '\0'; // Null terminate the string
   }
@@ -150,14 +201,14 @@ String  readWifiSerialMessage(){
 */
 String sendToWifi(String command, const int timeout, boolean debug){
   String response = "";
-  wifiSerial.println(command); // send the read character to the esp8266
+  wifi.println(command); // send the read character to the esp8266
   long int time = millis();
   while( (time+timeout) > millis())
   {
-    while(wifiSerial.available())
+    while(wifi.available())
     {
     // The esp has data so display its output to the serial window 
-    char c = wifiSerial.read(); // read the next character.
+    char c = wifi.read(); // read the next character.
     response+=c;
     }  
   }
