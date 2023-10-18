@@ -22,5 +22,9 @@
   <string>1.0</string>
   <key>MinimumOSVersion</key>
   <string>11.0</string>
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>Reason for Bluetooth usage</string>
+  <key>NSBluetoothPeripheralUsageDescription</key>
+  <string>Reason for Bluetooth peripheral usage</string>
 </dict>
 </plist>

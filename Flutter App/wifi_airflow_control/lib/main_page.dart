@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 
 import 'damper.dart';
 import 'damper_slider.dart';
@@ -16,6 +17,7 @@ class _MainPageState extends State<MainPage> {
       .refFromURL("https://iflow-fe711-default-rtdb.firebaseio.com/");
   User? _user;
   Map<String, Damper> _dampers = {};
+  FlutterBlue flutterBlue = FlutterBlue.instance;
 
   @override
   void initState() {
@@ -85,6 +87,35 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  void _connectToDamper(String damperId) {
+    flutterBlue.startScan(timeout: Duration(seconds: 5));
+
+    // Listen to scan results
+    var subscription = flutterBlue.scanResults.listen((results) {
+      for (ScanResult result in results) {
+        if (result.device.name == damperId) {
+          // Stop scanning
+          flutterBlue.stopScan();
+
+          // Connect to the selected device
+          result.device.connect();
+
+          // Optionally, you can disconnect after a timeout or after certain operations
+          // result.device.disconnect();
+
+          setState(() {
+            _dampers[damperId] =
+                Damper(damperId, "Damper ${_dampers.length + 1}", 0);
+            _updateDampers();
+          });
+        }
+      }
+    });
+
+    // Remember to cancel subscription after done
+    subscription.cancel();
+  }
+
   void _addDamper() async {
     /*
     todo
@@ -97,11 +128,7 @@ class _MainPageState extends State<MainPage> {
     */
     String? damperId = await _showDamperIdDialog(context);
     if (damperId != null && damperId.isNotEmpty) {
-      setState(() {
-        _dampers[damperId] =
-            Damper(damperId, "Damper ${_dampers.length + 1}", 0);
-        _updateDampers();
-      });
+      _connectToDamper(damperId);
     }
   }
 
