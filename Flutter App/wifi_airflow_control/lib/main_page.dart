@@ -121,9 +121,10 @@ class _MainPageState extends State<MainPage> {
 
     _showLoadingDialog(context);
 
-    String targetServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
+    String wifiServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
+    String userIdServiceUUID = '00001801-0000-1000-8000-00805f9b34fb';
     flutterBlue.startScan(
-        withServices: [Guid(targetServiceUUID)],
+        withServices: [Guid(wifiServiceUUID)],
         timeout: Duration(seconds: 30)).catchError((error) {
       print("Error starting scan: $error");
     });
@@ -160,11 +161,11 @@ class _MainPageState extends State<MainPage> {
             List<BluetoothService> services =
                 await result.device.discoverServices();
 
+            print(services);
+
             // Find the right service (using the service UUID provided)
             BluetoothService wifiService = services.firstWhere(
-                (service) => service.uuid.toString() == targetServiceUUID);
-
-            print(wifiService.characteristics);
+                (service) => service.uuid.toString() == wifiServiceUUID);
 
             BluetoothCharacteristic ssidCharacteristic =
                 wifiService.characteristics.firstWhere((c) =>
@@ -174,10 +175,14 @@ class _MainPageState extends State<MainPage> {
                 wifiService.characteristics.firstWhere((c) =>
                     c.uuid.toString() ==
                     "00002a01-0000-1000-8000-00805f9b34fb");
+
+            BluetoothService userIdService = services.firstWhere(
+                (service) => service.uuid.toString() == userIdServiceUUID);
+
             BluetoothCharacteristic userIdCharacteristic =
-                wifiService.characteristics.firstWhere((c) =>
+                userIdService.characteristics.firstWhere((c) =>
                     c.uuid.toString() ==
-                    "00002a04-0000-1000-8000-00805f9b34fb");
+                    "00002ac4-0000-1000-8000-00805f9b34fb");
 
             await ssidCharacteristic.write(utf8.encode(ssid));
             await passwordCharacteristic.write(utf8.encode(password));

@@ -2,6 +2,7 @@
 #include <Servo.h>
 #include <ArduinoBLE.h>
 #include <FlashStorage.h>
+#include <utility/wifi_drv.h>
 
 #define DATABASE_URL "iflow-fe711-default-rtdb.firebaseio.com"
 #define DATABASE_SECRET "Y9Fjdu4CvnlpcBMtpTGx13hj4aQ5eFAwm4cQWhZn"
@@ -35,14 +36,19 @@ FlashStorage(flashStorage, WifiCredentials);
 
 // Global variables for BLE
 BLEService wifiService("1800");  // Use a standard GATT service number
+BLEService userIdService("1801");
 BLEStringCharacteristic ssidCharacteristic("2A00", BLERead | BLEWrite, MAX_SSID_LENGTH);  // Standard GATT characteristic for Device Name, repurposed for SSID
 BLEStringCharacteristic passwordCharacteristic("2A01", BLERead | BLEWrite, MAX_PASSWORD_LENGTH);  // Another standard GATT characteristic, repurposed for password
-BLEStringCharacteristic userIdCharacteristic("2A04", BLERead | BLEWrite, MAX_USERID_LENGTH);  // Another standard GATT characteristic, repurposed for user ID
+BLEStringCharacteristic userIdCharacteristic("2AC4", BLERead | BLEWrite, MAX_USERID_LENGTH);  // Another standard GATT characteristic, repurposed for user ID
 
 // Global variables for WiFi and Firebase
 String ssid, password, userId;
 
 void setup() {
+
+  WiFiDrv::pinMode(25, OUTPUT); //define green pin
+  WiFiDrv::pinMode(26, OUTPUT); //define red pin
+  WiFiDrv::pinMode(27, OUTPUT); //define blue pin
 
   Serial.begin(9600);
   //while (!Serial);  // Wait for serial connection
@@ -79,6 +85,7 @@ void setup() {
     setupBLE();
     
     int ledState = LOW;
+    int b = 0;
     Serial.println("polling BLE");
     while (!ssidCharacteristic.written() || !passwordCharacteristic.written() || !userIdCharacteristic.written()) {
       Serial.print(".");
@@ -86,11 +93,14 @@ void setup() {
       delay(1000);
       // if the LED is off, turn it on, and vice-versa
       if (ledState == LOW) {
+        b = 0;
         ledState = HIGH;
       } else {
+        b = 255;
         ledState = LOW;
       }
       digitalWrite(LED_BUILTIN, ledState);
+      //setStatusLED(0, 0, b);
     }
     Serial.println();
     
@@ -158,6 +168,7 @@ void loop() {
 void setupBLE() {
   if (!BLE.begin()) {
     Serial.println("Starting BLE failed!");
+    setStatusLED(255, 0, 0);
     while (1);
   }
   
@@ -168,18 +179,26 @@ void setupBLE() {
 
   if(!BLE.setAdvertisedService(wifiService)){
     Serial.println("Failed to set advertised service");
+    setStatusLED(255, 0, 0);
+    while (1);
+  }
+
+  if(!BLE.setAdvertisedService(userIdService)){
+    Serial.println("Failed to set advertised service");
+    setStatusLED(255, 0, 0);
     while (1);
   }
   
   wifiService.addCharacteristic(ssidCharacteristic);
   wifiService.addCharacteristic(passwordCharacteristic);
-  wifiService.addCharacteristic(userIdCharacteristic);
-  
+  userIdService.addCharacteristic(userIdCharacteristic);
+
   BLE.addService(wifiService);
+  BLE.addService(userIdService);
   
-  ssidCharacteristic.setValue("");
-  passwordCharacteristic.setValue("");
-  userIdCharacteristic.setValue("");
+  ssidCharacteristic.writeValue("");
+  passwordCharacteristic.writeValue("");
+  userIdCharacteristic.writeValue("");
   
   int result = BLE.advertise();
   Serial.println("BLE advertise result: " + String(result));
@@ -199,4 +218,10 @@ void connectToFirebase() {
   Serial.print("Connecting to firebase");
   Firebase.begin(DATABASE_URL, DATABASE_SECRET, ssid.c_str(), password.c_str());
   Firebase.reconnectWiFi(true);
+}
+
+void setStatusLED(uint8_t r, uint8_t g, uint8_t b){
+  WiFiDrv::analogWrite(25, r);
+  WiFiDrv::analogWrite(26, g);
+  WiFiDrv::analogWrite(27, b);
 }
