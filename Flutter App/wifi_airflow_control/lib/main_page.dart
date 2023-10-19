@@ -20,6 +20,7 @@ class _MainPageState extends State<MainPage> {
   User? _user;
   Map<String, Damper> _dampers = {};
   FlutterBlue flutterBlue = FlutterBlue.instance;
+  bool _isScanning = false;
 
   @override
   void initState() {
@@ -95,6 +96,8 @@ class _MainPageState extends State<MainPage> {
         await [Permission.bluetoothScan, Permission.bluetoothConnect].request();
 
     print(statuses);
+    return statuses[Permission.bluetoothConnect]!.isGranted &&
+        statuses[Permission.bluetoothScan]!.isGranted;
 
     // if (statuses[Permission.bluetoothConnect]!.isGranted &&
     //     statuses[Permission.bluetoothScan]!.isGranted) {
@@ -108,7 +111,7 @@ class _MainPageState extends State<MainPage> {
     //   // Open the app settings to allow the user to grant the permission.
     //   openAppSettings();
     // }
-    return true;
+    // return false;
   }
 
   Future<void> _connectToDamper(
@@ -119,11 +122,9 @@ class _MainPageState extends State<MainPage> {
     _showLoadingDialog(context);
 
     String targetServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
-    flutterBlue
-        .startScan(
-            //withServices: [Guid(targetServiceUUID)],
-            timeout: Duration(seconds: 30))
-        .catchError((error) {
+    flutterBlue.startScan(
+        withServices: [Guid(targetServiceUUID)],
+        timeout: Duration(seconds: 30)).catchError((error) {
       print("Error starting scan: $error");
     });
 
@@ -140,50 +141,63 @@ class _MainPageState extends State<MainPage> {
           print('Device Name: ${result.device.name}');
           print('Device ID: ${result.device.id}');
           print('Device RSSI: ${result.rssi}');
+          print('Device Data: ${result.advertisementData}');
           print('-------------------------');
         }
 
-        if (result.device.name == damperId) {
-          // Stop scanning
-          flutterBlue.stopScan();
+        if (result.device.id.id.replaceAll(':', '').toLowerCase() ==
+            damperId.toLowerCase()) {
+          try {
+            // Stop scanning
+            flutterBlue.stopScan();
 
-          // Connect to the selected device
-          await result.device.connect().then((_) {
+            // Connect to the selected device
+            await result.device.connect().catchError((error) {
+              _showFailureMessage(context, error.toString());
+            });
+
+            // Discover services after connecting to the device
+            List<BluetoothService> services =
+                await result.device.discoverServices();
+
+            // Find the right service (using the service UUID provided)
+            BluetoothService wifiService = services.firstWhere(
+                (service) => service.uuid.toString() == targetServiceUUID);
+
+            print(wifiService.characteristics);
+
+            BluetoothCharacteristic ssidCharacteristic =
+                wifiService.characteristics.firstWhere((c) =>
+                    c.uuid.toString() ==
+                    "00002a00-0000-1000-8000-00805f9b34fb");
+            BluetoothCharacteristic passwordCharacteristic =
+                wifiService.characteristics.firstWhere((c) =>
+                    c.uuid.toString() ==
+                    "00002a01-0000-1000-8000-00805f9b34fb");
+            BluetoothCharacteristic userIdCharacteristic =
+                wifiService.characteristics.firstWhere((c) =>
+                    c.uuid.toString() ==
+                    "00002a04-0000-1000-8000-00805f9b34fb");
+
+            await ssidCharacteristic.write(utf8.encode(ssid));
+            await passwordCharacteristic.write(utf8.encode(password));
+            await userIdCharacteristic.write(utf8.encode(userId));
+
+            // Optionally, you can disconnect after a timeout or after certain operations
+            // result.device.disconnect();
+
             _showSuccessMessage(context);
-          }).catchError((error) {
-            _showFailureMessage(context, error.toString());
-          });
 
-          // Discover services after connecting to the device
-          List<BluetoothService> services =
-              await result.device.discoverServices();
-
-          // Find the right service (using the service UUID provided)
-          BluetoothService wifiService = services
-              .firstWhere((service) => service.uuid.toString() == "1800");
-
-          BluetoothCharacteristic ssidCharacteristic = wifiService
-              .characteristics
-              .firstWhere((c) => c.uuid.toString() == "2A00");
-          BluetoothCharacteristic passwordCharacteristic = wifiService
-              .characteristics
-              .firstWhere((c) => c.uuid.toString() == "2A01");
-          BluetoothCharacteristic userIdCharacteristic = wifiService
-              .characteristics
-              .firstWhere((c) => c.uuid.toString() == "2A04");
-
-          await ssidCharacteristic.write(utf8.encode(ssid));
-          await passwordCharacteristic.write(utf8.encode(password));
-          await userIdCharacteristic.write(utf8.encode(userId));
-
-          // Optionally, you can disconnect after a timeout or after certain operations
-          // result.device.disconnect();
-
-          setState(() {
-            _dampers[damperId] =
-                Damper(damperId, "Damper ${_dampers.length + 1}", 0);
-            _updateDampers();
-          });
+            setState(() {
+              _dampers[damperId] =
+                  Damper(damperId, "Damper ${_dampers.length + 1}", 0);
+              _updateDampers();
+            });
+          } catch (e) {
+            print(e);
+            // Show error message dialog
+            _showFailureMessage(context, e.toString());
+          }
         }
       }
     });
@@ -191,7 +205,7 @@ class _MainPageState extends State<MainPage> {
     // Cancel the subscription after the scan timeout
     Future.delayed(Duration(seconds: 30), () {
       subscription.cancel();
-      if (_dampers[damperId] == null) {
+      if (_dampers[damperId] == null && _isScanning) {
         _showFailureMessage(context, "Device not found");
       }
     });
@@ -203,7 +217,7 @@ class _MainPageState extends State<MainPage> {
     // String? ssid = result?['ssid'];
     // String? password = result?['password'];
 
-    String? damperId = "818231130243112";
+    String? damperId = "08b61f82f372";
     String? ssid = "Zenfone 9_3070";
     String? password = "mme9h4xpeq9mtdw";
 
@@ -567,6 +581,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _showLoadingDialog(BuildContext context) {
+    _isScanning = true;
     showDialog(
       context: context,
       barrierDismissible:
@@ -582,18 +597,18 @@ class _MainPageState extends State<MainPage> {
           ),
         );
       },
-    );
+    ).then((value) => _isScanning = false);
   }
 
   void _showSuccessMessage(BuildContext context) {
-    Navigator.of(context).pop(); // Close the loading dialog
+    if (_isScanning) Navigator.of(context).pop(); // Close the loading dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connected successfully!')),
     );
   }
 
   void _showFailureMessage(BuildContext context, String reason) {
-    Navigator.of(context).pop(); // Close the loading dialog
+    if (_isScanning) Navigator.of(context).pop(); // Close the loading dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connection failed: $reason')),
     );

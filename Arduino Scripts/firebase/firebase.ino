@@ -43,19 +43,32 @@ BLEStringCharacteristic userIdCharacteristic("2A04", BLERead | BLEWrite, MAX_USE
 String ssid, password, userId;
 
 void setup() {
+
   Serial.begin(9600);
-  while (!Serial);  // Wait for serial connection
+  //while (!Serial);  // Wait for serial connection
   Serial.println();
   Serial.println("setup started");
 
   byte mac[6];
   WiFi.macAddress(mac);
+
+  String macStr = "";
+  for (int i = 5; i >= 0; i--) {
+    if (i < 5) {
+      macStr += ":";
+    }
+    if (mac[i] < 16) {
+      macStr += "0"; // Pad with leading zero if necessary
+    }
+    macStr += String(mac[i], HEX);
+  }
   
   for (int i = 5; i >= 0; i--) {
     macAddressInDecimal += String(mac[i]);
   }
 
-  Serial.println("Damper ID: " + macAddressInDecimal);
+  Serial.println("WiFi Mac Address: " + macStr);
+  //Serial.println("Damper ID: " + macAddressInDecimal);
 
   // 1. Attempt to retrieve SSID, password, and user ID from flash storage
   WifiCredentials storedCredentials = flashStorage.read();
@@ -65,11 +78,19 @@ void setup() {
     // 2. Initialize BLE and wait for central device to provide values
     setupBLE();
     
+    int ledState = LOW;
     Serial.println("polling BLE");
     while (!ssidCharacteristic.written() || !passwordCharacteristic.written() || !userIdCharacteristic.written()) {
       Serial.print(".");
       BLE.poll();
       delay(1000);
+      // if the LED is off, turn it on, and vice-versa
+      if (ledState == LOW) {
+        ledState = HIGH;
+      } else {
+        ledState = LOW;
+      }
+      digitalWrite(LED_BUILTIN, ledState);
     }
     Serial.println();
     
@@ -140,7 +161,10 @@ void setupBLE() {
     while (1);
   }
   
-  BLE.setDeviceName(macAddressInDecimal.c_str());
+  Serial.println("BLE address: " + BLE.address());
+  BLE.setDeviceName("iFlow Damper");
+  BLE.setLocalName("iFlow Damper");
+  BLE.setConnectable(true);
 
   if(!BLE.setAdvertisedService(wifiService)){
     Serial.println("Failed to set advertised service");
