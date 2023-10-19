@@ -115,11 +115,14 @@ class _MainPageState extends State<MainPage> {
       String damperId, String ssid, String password, String userId) async {
     var granted = await requestBluetoothScanPermission();
     if (!granted) return;
+
+    _showLoadingDialog(context);
+
     String targetServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
     flutterBlue
         .startScan(
             //withServices: [Guid(targetServiceUUID)],
-            timeout: Duration(seconds: 15))
+            timeout: Duration(seconds: 30))
         .catchError((error) {
       print("Error starting scan: $error");
     });
@@ -145,7 +148,11 @@ class _MainPageState extends State<MainPage> {
           flutterBlue.stopScan();
 
           // Connect to the selected device
-          await result.device.connect();
+          await result.device.connect().then((_) {
+            _showSuccessMessage(context);
+          }).catchError((error) {
+            _showFailureMessage(context, error.toString());
+          });
 
           // Discover services after connecting to the device
           List<BluetoothService> services =
@@ -182,8 +189,11 @@ class _MainPageState extends State<MainPage> {
     });
 
     // Cancel the subscription after the scan timeout
-    Future.delayed(Duration(seconds: 15), () {
+    Future.delayed(Duration(seconds: 30), () {
       subscription.cancel();
+      if (_dampers[damperId] == null) {
+        _showFailureMessage(context, "Device not found");
+      }
     });
   }
 
@@ -553,6 +563,39 @@ class _MainPageState extends State<MainPage> {
           ],
         );
       },
+    );
+  }
+
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Prevents the user from closing the dialog by tapping outside of it
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Connecting..."),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSuccessMessage(BuildContext context) {
+    Navigator.of(context).pop(); // Close the loading dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Connected successfully!')),
+    );
+  }
+
+  void _showFailureMessage(BuildContext context, String reason) {
+    Navigator.of(context).pop(); // Close the loading dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Connection failed: $reason')),
     );
   }
 }
