@@ -51,41 +51,7 @@ void setup() {
 
   if (!storedCredentials.initialized) {
     Serial.println("damper not initialized");
-    // Initialize BLE and wait for central device to provide values
-    setupBLE();
-    
-    int ledState = LOW;
-    Serial.println("polling BLE");
-    while (!xCharacteristic.written()) {
-      Serial.print(".");
-      BLE.poll();
-      delay(1000);
-      // if the LED is off, turn it on, and vice-versa
-      if (ledState == LOW) {
-        ledState = HIGH;
-      } else {
-        ledState = LOW;
-      }
-      digitalWrite(LED_BUILTIN, ledState);
-    }
-    Serial.println();
-    
-    String* values = split(xCharacteristic.value(), ';');
-    
-    ssid = values[0];
-    password = values[1];
-    userId = values[2];
-
-    Serial.println("ssid: " + ssid);
-    Serial.println("password: " + password);
-    Serial.println("userId: " + userId);
-    
-    ssid.toCharArray(newCredentials.ssid, MAX_SSID_LENGTH);
-    password.toCharArray(newCredentials.password, MAX_PASSWORD_LENGTH);
-    userId.toCharArray(newCredentials.userId, MAX_USERID_LENGTH);
-    newCredentials.initialized = true;
-    
-    BLE.end();  // Stop BLE services
+    initialize();
   } else {
     BLE.begin();
     mac = strip(BLE.address(), ':');
@@ -101,20 +67,13 @@ void setup() {
     Serial.println("userId: " + userId);
   }
 
-  // Connect to WiFi
   connectToWiFi();
-
-  // Connect and authenticate to Firebase
   connectToFirebase();
 
   myservo.attach(9);
-
-  // Set initial servo position
   myservo.write(position);
   
   positionPath = userId + "/" + mac + "/position";
-
-  Firebase.setInt(fbdo, positionPath, position);
 
   // Store received values in flash storage
   if (!storedCredentials.initialized) {
@@ -134,9 +93,58 @@ void loop() {
   } else {
     // Handle error if needed
     Serial.println("Failed to retrieve position from Firebase: " + fbdo.errorReason());
+    if(fbdo.errorReason() == "path not exist"){
+      Serial.println("resetting...");
+      myservo.write(0);
+      resetWifiModule();
+      eraseWifiCredentials();
+      initialize();
+      connectToWiFi();
+      connectToFirebase();
+      flashStorage.write(newCredentials);
+    }
   }
 
   delay(1000); // Delay to prevent rapid Firebase requests. Adjust as needed.
+}
+
+void initialize(){
+// Initialize BLE and wait for central device to provide values
+    setupBLE();
+    
+    int ledState = LOW;
+    Serial.println("polling BLE");
+    while (!xCharacteristic.written()) {
+      Serial.print(".");
+      BLE.poll();
+      delay(1000);
+      // if the LED is off, turn it on, and vice-versa
+      if (ledState == LOW) {
+        ledState = HIGH;
+      } else {
+        ledState = LOW;
+      }
+      digitalWrite(LED_BUILTIN, ledState);
+    }
+    digitalWrite(LED_BUILTIN, LOW);
+    Serial.println();
+    
+    String* values = split(xCharacteristic.value(), ';');
+    
+    ssid = values[0];
+    password = values[1];
+    userId = values[2];
+
+    Serial.println("ssid: " + ssid);
+    Serial.println("password: " + password);
+    Serial.println("userId: " + userId);
+    
+    ssid.toCharArray(newCredentials.ssid, MAX_SSID_LENGTH);
+    password.toCharArray(newCredentials.password, MAX_PASSWORD_LENGTH);
+    userId.toCharArray(newCredentials.userId, MAX_USERID_LENGTH);
+    newCredentials.initialized = true;
+    
+    BLE.end();  // Stop BLE services
 }
 
 void setupBLE() {
@@ -167,19 +175,45 @@ void setupBLE() {
 }
 
 void connectToWiFi() {
-  Serial.print("Connecting to Wi-Fi...");
+  Serial.println("Connecting to Wi-Fi...");
+  Serial.println("ssid: " + ssid);
+  Serial.println("password: " + password);
+  Serial.println("Wi-Fi Status: " + String(WiFi.status()));
+
   int status = WL_IDLE_STATUS;
   while (status != WL_CONNECTED) {
     status = WiFi.begin(ssid.c_str(), password.c_str());
+    Serial.println("Wi-Fi status: " + String(status));
     delay(1000);
   }
   Serial.println("Connected!");
 }
 
 void connectToFirebase() {
-  Serial.print("Connecting to firebase");
+  Serial.println("Connecting to firebase");
   Firebase.begin(DATABASE_URL, DATABASE_SECRET, ssid.c_str(), password.c_str());
   Firebase.reconnectWiFi(true);
+}
+
+void eraseWifiCredentials() {
+  ssid = "";
+  password = "";
+  userId = "";
+
+  memset(newCredentials.ssid, 0, sizeof(newCredentials.ssid));
+  memset(newCredentials.password, 0, sizeof(newCredentials.password));
+  memset(newCredentials.userId, 0, sizeof(newCredentials.userId));
+  newCredentials.initialized = false;
+
+  // Write the empty struct to flash storage
+  flashStorage.write(newCredentials);
+}
+
+void resetWifiModule(){
+  Serial.println("disconnecting Wi-Fi...");
+  WiFi.disconnect();
+  delay(5000);
+  WiFi.end();
 }
 
 String* split(String data, char separator) {
