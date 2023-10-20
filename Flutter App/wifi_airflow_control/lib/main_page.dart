@@ -122,7 +122,7 @@ class _MainPageState extends State<MainPage> {
     _showLoadingDialog(context);
 
     String wifiServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
-    String userIdServiceUUID = '00001801-0000-1000-8000-00805f9b34fb';
+    //String userIdServiceUUID = '00001801-0000-1000-8000-00805f9b34fb';
     flutterBlue.startScan(
         withServices: [Guid(wifiServiceUUID)],
         timeout: Duration(seconds: 30)).catchError((error) {
@@ -167,26 +167,30 @@ class _MainPageState extends State<MainPage> {
             BluetoothService wifiService = services.firstWhere(
                 (service) => service.uuid.toString() == wifiServiceUUID);
 
-            BluetoothCharacteristic ssidCharacteristic =
-                wifiService.characteristics.firstWhere((c) =>
-                    c.uuid.toString() ==
-                    "00002a00-0000-1000-8000-00805f9b34fb");
-            BluetoothCharacteristic passwordCharacteristic =
-                wifiService.characteristics.firstWhere((c) =>
-                    c.uuid.toString() ==
-                    "00002a01-0000-1000-8000-00805f9b34fb");
+            // BluetoothCharacteristic ssidCharacteristic =
+            //     wifiService.characteristics.firstWhere((c) =>
+            //         c.uuid.toString() ==
+            //         "00002a00-0000-1000-8000-00805f9b34fb");
+            // BluetoothCharacteristic passwordCharacteristic =
+            //     wifiService.characteristics.firstWhere((c) =>
+            //         c.uuid.toString() ==
+            //         "00002a01-0000-1000-8000-00805f9b34fb");
 
-            BluetoothService userIdService = services.firstWhere(
-                (service) => service.uuid.toString() == userIdServiceUUID);
+            // BluetoothService userIdService = services.firstWhere(
+            //     (service) => service.uuid.toString() == userIdServiceUUID);
 
-            BluetoothCharacteristic userIdCharacteristic =
-                userIdService.characteristics.firstWhere((c) =>
+            BluetoothCharacteristic xCharacteristic =
+                wifiService.characteristics.firstWhere((c) =>
                     c.uuid.toString() ==
                     "00002ac4-0000-1000-8000-00805f9b34fb");
 
-            await ssidCharacteristic.write(utf8.encode(ssid));
-            await passwordCharacteristic.write(utf8.encode(password));
-            await userIdCharacteristic.write(utf8.encode(userId));
+            var x = '$ssid;$password;$userId';
+
+            // await ssidCharacteristic.write(utf8.encode(ssid));
+            // await passwordCharacteristic.write(utf8.encode(password));
+            // await userIdCharacteristic.write(utf8.encode(userId));
+
+            await xCharacteristic.write(utf8.encode(x));
 
             // Optionally, you can disconnect after a timeout or after certain operations
             // result.device.disconnect();
