@@ -119,7 +119,7 @@ class _MainPageState extends State<MainPage> {
     var granted = await requestBluetoothScanPermission();
     if (!granted) return;
 
-    _showLoadingDialog(context);
+    _showLoadingDialog();
 
     String wifiServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
     flutterBlue.startScan(
@@ -153,7 +153,7 @@ class _MainPageState extends State<MainPage> {
 
             // Connect to the selected device
             await result.device.connect().catchError((error) {
-              _showFailureMessage(context, error.toString());
+              _showFailureMessage(error.toString());
             });
 
             // Discover services after connecting to the device
@@ -175,7 +175,7 @@ class _MainPageState extends State<MainPage> {
 
             await xCharacteristic.write(utf8.encode(x));
 
-            _showSuccessMessage(context);
+            _showSuccessMessage();
 
             setState(() {
               _dampers[damperId] =
@@ -184,7 +184,7 @@ class _MainPageState extends State<MainPage> {
             });
           } catch (e) {
             print(e);
-            _showFailureMessage(context, e.toString());
+            _showFailureMessage(e.toString());
           }
 
           result.device.disconnect();
@@ -196,7 +196,7 @@ class _MainPageState extends State<MainPage> {
     Future.delayed(Duration(seconds: 30), () {
       subscription.cancel();
       if (_dampers[damperId] == null && _isScanning) {
-        _showFailureMessage(context, "Device not found");
+        _showFailureMessage("Device not found");
       }
     });
   }
@@ -570,7 +570,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  void _showLoadingDialog(BuildContext context) {
+  void _showLoadingDialog() {
     _isScanning = true;
     showDialog(
       context: context,
@@ -590,14 +590,14 @@ class _MainPageState extends State<MainPage> {
     ).then((value) => _isScanning = false);
   }
 
-  void _showSuccessMessage(BuildContext context) {
+  void _showSuccessMessage() {
     if (_isScanning) Navigator.of(context).pop(); // Close the loading dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connected successfully!')),
     );
   }
 
-  void _showFailureMessage(BuildContext context, String reason) {
+  void _showFailureMessage(reason) {
     if (_isScanning) Navigator.of(context).pop(); // Close the loading dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connection failed: $reason')),
