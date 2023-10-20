@@ -6,16 +6,13 @@
 
 #define DATABASE_URL "iflow-fe711-default-rtdb.firebaseio.com"
 #define DATABASE_SECRET "Y9Fjdu4CvnlpcBMtpTGx13hj4aQ5eFAwm4cQWhZn"
-#define WIFI_SSID "Adkins"
-#define WIFI_PASSWORD "chuck1229"
 
 //Define Firebase data object
 FirebaseData fbdo;
 
 Servo myservo;
 int position = 0; // Initial position
-const String USER_ID = "ecnlzD6NLnbXqx47qcaeU2KgfDr2";
-String macAddressInDecimal; // used as damper id
+String mac; // used as damper id
 String positionPath; // firebase path to position value of this damper
 
 // Define the maximum lengths for the strings (including null terminators)
@@ -31,97 +28,69 @@ struct WifiCredentials {
   bool initialized;  // Flag to check if data has been written before
 };
 
+WifiCredentials newCredentials;
+
 // Create an instance of the struct for flash storage
 FlashStorage(flashStorage, WifiCredentials);
 
 // Global variables for BLE
 BLEService wifiService("1800");  // Use a standard GATT service number
-BLEService userIdService("1801");
-BLEStringCharacteristic ssidCharacteristic("2A00", BLERead | BLEWrite, MAX_SSID_LENGTH);  // Standard GATT characteristic for Device Name, repurposed for SSID
-BLEStringCharacteristic passwordCharacteristic("2A01", BLERead | BLEWrite, MAX_PASSWORD_LENGTH);  // Another standard GATT characteristic, repurposed for password
-BLEStringCharacteristic userIdCharacteristic("2AC4", BLERead | BLEWrite, MAX_USERID_LENGTH);  // Another standard GATT characteristic, repurposed for user ID
+BLEStringCharacteristic xCharacteristic("2AC4", BLERead | BLEWrite, 126);
 
 // Global variables for WiFi and Firebase
 String ssid, password, userId;
 
 void setup() {
-
-  WiFiDrv::pinMode(25, OUTPUT); //define green pin
-  WiFiDrv::pinMode(26, OUTPUT); //define red pin
-  WiFiDrv::pinMode(27, OUTPUT); //define blue pin
-
   Serial.begin(9600);
-  //while (!Serial);  // Wait for serial connection
+  while (!Serial);  // Wait for serial connection
   Serial.println();
   Serial.println("setup started");
 
-  byte mac[6];
-  WiFi.macAddress(mac);
-
-  String macStr = "";
-  for (int i = 5; i >= 0; i--) {
-    if (i < 5) {
-      macStr += ":";
-    }
-    if (mac[i] < 16) {
-      macStr += "0"; // Pad with leading zero if necessary
-    }
-    macStr += String(mac[i], HEX);
-  }
-  
-  for (int i = 5; i >= 0; i--) {
-    macAddressInDecimal += String(mac[i]);
-  }
-
-  Serial.println("WiFi Mac Address: " + macStr);
-  //Serial.println("Damper ID: " + macAddressInDecimal);
-
-  // 1. Attempt to retrieve SSID, password, and user ID from flash storage
+  // Attempt to retrieve SSID, password, and user ID from flash storage
   WifiCredentials storedCredentials = flashStorage.read();
 
   if (!storedCredentials.initialized) {
     Serial.println("damper not initialized");
-    // 2. Initialize BLE and wait for central device to provide values
+    // Initialize BLE and wait for central device to provide values
     setupBLE();
     
     int ledState = LOW;
-    int b = 0;
     Serial.println("polling BLE");
-    while (!ssidCharacteristic.written() || !passwordCharacteristic.written() || !userIdCharacteristic.written()) {
+    while (!xCharacteristic.written()) {
       Serial.print(".");
       BLE.poll();
       delay(1000);
       // if the LED is off, turn it on, and vice-versa
       if (ledState == LOW) {
-        b = 0;
         ledState = HIGH;
       } else {
-        b = 255;
         ledState = LOW;
       }
       digitalWrite(LED_BUILTIN, ledState);
-      //setStatusLED(0, 0, b);
     }
     Serial.println();
     
-    ssid = ssidCharacteristic.value();
-    password = passwordCharacteristic.value();
-    userId = userIdCharacteristic.value();
+    String* values = split(xCharacteristic.value(), ';');
+    
+    ssid = values[0];
+    password = values[1];
+    userId = values[2];
 
     Serial.println("ssid: " + ssid);
     Serial.println("password: " + password);
     Serial.println("userId: " + userId);
-
-    // 3. Store received values in flash storage
-    WifiCredentials newCredentials;
+    
     ssid.toCharArray(newCredentials.ssid, MAX_SSID_LENGTH);
     password.toCharArray(newCredentials.password, MAX_PASSWORD_LENGTH);
     userId.toCharArray(newCredentials.userId, MAX_USERID_LENGTH);
     newCredentials.initialized = true;
-    flashStorage.write(newCredentials);
     
     BLE.end();  // Stop BLE services
   } else {
+    BLE.begin();
+    mac = strip(BLE.address(), ':');
+    BLE.end();
+
     Serial.println("damper initialized");
     ssid = String(storedCredentials.ssid);
     password = String(storedCredentials.password);
@@ -132,10 +101,10 @@ void setup() {
     Serial.println("userId: " + userId);
   }
 
-  // 4. Connect to WiFi
+  // Connect to WiFi
   connectToWiFi();
 
-  // 5. Connect and authenticate to Firebase
+  // Connect and authenticate to Firebase
   connectToFirebase();
 
   myservo.attach(9);
@@ -143,9 +112,14 @@ void setup() {
   // Set initial servo position
   myservo.write(position);
   
-  positionPath = userId + "/" + macAddressInDecimal + "/position";
+  positionPath = userId + "/" + mac + "/position";
 
   Firebase.setInt(fbdo, positionPath, position);
+
+  // Store received values in flash storage
+  if (!storedCredentials.initialized) {
+    flashStorage.write(newCredentials);
+  }
 }
 
 void loop() {
@@ -168,37 +142,25 @@ void loop() {
 void setupBLE() {
   if (!BLE.begin()) {
     Serial.println("Starting BLE failed!");
-    setStatusLED(255, 0, 0);
     while (1);
   }
   
-  Serial.println("BLE address: " + BLE.address());
-  BLE.setDeviceName("iFlow Damper");
-  BLE.setLocalName("iFlow Damper");
+  mac = strip(BLE.address(), ':');
+  Serial.println("BLE address: " + mac);
+  BLE.setDeviceName("iFlow damper");
+  BLE.setLocalName("iFlow damper");
   BLE.setConnectable(true);
 
   if(!BLE.setAdvertisedService(wifiService)){
     Serial.println("Failed to set advertised service");
-    setStatusLED(255, 0, 0);
     while (1);
   }
 
-  if(!BLE.setAdvertisedService(userIdService)){
-    Serial.println("Failed to set advertised service");
-    setStatusLED(255, 0, 0);
-    while (1);
-  }
-  
-  wifiService.addCharacteristic(ssidCharacteristic);
-  wifiService.addCharacteristic(passwordCharacteristic);
-  userIdService.addCharacteristic(userIdCharacteristic);
+  wifiService.addCharacteristic(xCharacteristic);
 
   BLE.addService(wifiService);
-  BLE.addService(userIdService);
   
-  ssidCharacteristic.writeValue("");
-  passwordCharacteristic.writeValue("");
-  userIdCharacteristic.writeValue("");
+  xCharacteristic.writeValue("");
   
   int result = BLE.advertise();
   Serial.println("BLE advertise result: " + String(result));
@@ -220,8 +182,33 @@ void connectToFirebase() {
   Firebase.reconnectWiFi(true);
 }
 
-void setStatusLED(uint8_t r, uint8_t g, uint8_t b){
-  WiFiDrv::analogWrite(25, r);
-  WiFiDrv::analogWrite(26, g);
-  WiFiDrv::analogWrite(27, b);
+String* split(String data, char separator) {
+  static String result[3];
+  int startIndex = 0;
+
+  for (int i = 0; i < 3; i++) {
+    // Find the separator
+    int separatorIndex = data.indexOf(separator, startIndex);
+
+    // If separator is found, extract substring; otherwise, take the rest of the string
+    if (separatorIndex != -1) {
+      result[i] = data.substring(startIndex, separatorIndex);
+      startIndex = separatorIndex + 1;
+    } else {
+      result[i] = data.substring(startIndex);
+      break;
+    }
+  }
+
+  return result;
+}
+
+String strip(const String &input, char charToRemove) {
+    String result = "";
+    for (unsigned int i = 0; i < input.length(); i++) {
+        if (input[i] != charToRemove) {
+            result += input[i];
+        }
+    }
+    return result;
 }
