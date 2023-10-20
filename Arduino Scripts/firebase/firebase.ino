@@ -42,7 +42,7 @@ String ssid, password, userId;
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);  // Wait for serial connection
+  //while (!Serial);  // Wait for serial connection
   Serial.println();
   Serial.println("setup started");
 
