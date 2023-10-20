@@ -202,14 +202,14 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _addDamper() async {
-    // var result = await _showNewDamperDialog(context);
-    // String? damperId = result?['damperId'];
-    // String? ssid = result?['ssid'];
-    // String? password = result?['password'];
+    var result = await _showNewDamperDialog(context);
+    String? damperId = result?['damperId'];
+    String? ssid = result?['ssid'];
+    String? password = result?['password'];
 
-    String? damperId = "08b61f82f372";
-    String? ssid = "Zenfone 9_3070";
-    String? password = "mme9h4xpeq9mtdw";
+    // String? damperId = "08b61f82f372";
+    // String? ssid = "Zenfone 9_3070";
+    // String? password = "mme9h4xpeq9mtdw";
 
     if (damperId != null && damperId.isNotEmpty) {
       _connectToDamper(damperId, ssid!, password!, _auth.currentUser!.uid);
