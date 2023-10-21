@@ -74,6 +74,7 @@ void setup() {
   myservo.write(position);
   
   positionPath = userId + "/" + mac + "/position";
+  Firebase.setInt(fbdo, positionPath, position);
 
   // Store received values in flash storage
   if (!storedCredentials.initialized) {
@@ -90,6 +91,8 @@ void loop() {
       myservo.write(newPosition);
       position = newPosition;
     }
+
+    sendHeartbeat();
   } else {
     // Handle error if needed
     Serial.println("Failed to retrieve position from Firebase: " + fbdo.errorReason());
@@ -193,6 +196,12 @@ void connectToFirebase() {
   Serial.println("Connecting to firebase");
   Firebase.begin(DATABASE_URL, DATABASE_SECRET, ssid.c_str(), password.c_str());
   Firebase.reconnectWiFi(true);
+}
+
+void sendHeartbeat() {
+    unsigned long currentMillis = millis();
+    String devicePath = userId + "/" + mac + "/lastHeartbeat";
+    Firebase.setFloat(fbdo, devicePath, currentMillis);
 }
 
 void eraseWifiCredentials() {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -26,6 +27,10 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _initUser();
+
+    Timer.periodic(Duration(minutes: 1), (timer) {
+      _loadDampers();
+    });
   }
 
   void _initUser() {
@@ -128,14 +133,24 @@ class _MainPageState extends State<MainPage> {
       print("Error starting scan: $error");
     });
 
+    damperId = damperId.replaceAll(':', '').toLowerCase();
     Set<String> seenDevices = {}; // Set to store unique device addresses
 
     // Listen to scan results
-    var subscription = flutterBlue.scanResults.listen((results) async {
+    StreamSubscription<List<ScanResult>>? subscription;
+    subscription = flutterBlue.scanResults.listen((results) async {
+      // Check if dialog is still active
+      if (!_isScanning) {
+        flutterBlue.stopScan();
+        subscription?.cancel();
+        return;
+      }
+
       for (ScanResult result in results) {
-        if (!seenDevices.contains(result.device.id.toString())) {
+        String deviceId = result.device.id.id.replaceAll(':', '').toLowerCase();
+        if (!seenDevices.contains(deviceId)) {
           // This is a new device
-          seenDevices.add(result.device.id.toString());
+          seenDevices.add(deviceId);
 
           // Print device details
           print('Device Name: ${result.device.name}');
@@ -145,8 +160,7 @@ class _MainPageState extends State<MainPage> {
           print('-------------------------');
         }
 
-        if (result.device.id.id.replaceAll(':', '').toLowerCase() ==
-            damperId.toLowerCase()) {
+        if (deviceId == damperId) {
           try {
             // Stop scanning
             flutterBlue.stopScan();
@@ -175,12 +189,28 @@ class _MainPageState extends State<MainPage> {
 
             await xCharacteristic.write(utf8.encode(x));
 
-            _showSuccessMessage();
-
-            setState(() {
-              _dampers[damperId] =
-                  Damper(damperId, "Damper ${_dampers.length + 1}", 0);
-              _updateDampers();
+            StreamSubscription<DatabaseEvent>? subscription;
+            subscription =
+                _db.child(userId).child(damperId).onValue.listen((event) {
+              // Check if dialog is still active
+              if (!_isScanning) {
+                subscription?.cancel();
+                return;
+              }
+              print(event.snapshot.value);
+              if (event.snapshot.value != null) {
+                if (event.snapshot.value is Map<String, dynamic> &&
+                    (event.snapshot.value as Map<String, dynamic>)['label'] ==
+                        null) {
+                  _db
+                      .child(userId)
+                      .child(damperId)
+                      .update({'label': 'Damper ${_dampers.length + 1}'});
+                  subscription?.cancel();
+                }
+                _showSuccessMessage();
+                _loadDampers();
+              }
             });
           } catch (e) {
             print(e);
@@ -194,22 +224,24 @@ class _MainPageState extends State<MainPage> {
 
     // Cancel the subscription after the scan timeout
     Future.delayed(Duration(seconds: 30), () {
-      subscription.cancel();
-      if (_dampers[damperId] == null && _isScanning) {
+      subscription?.cancel();
+      if (!seenDevices.contains(damperId) && _isScanning) {
         _showFailureMessage("Device not found");
       }
     });
   }
 
   void _addDamper() async {
-    var result = await _showNewDamperDialog(context);
-    String? damperId = result?['damperId'];
-    String? ssid = result?['ssid'];
-    String? password = result?['password'];
+    // var result = await _showNewDamperDialog(context);
+    // String? damperId = result?['damperId'];
+    // String? ssid = result?['ssid'];
+    // String? password = result?['password'];
 
-    // String? damperId = "08b61f82f372";
+    String? damperId = "08b61f82f372";
     // String? ssid = "Zenfone 9_3070";
     // String? password = "mme9h4xpeq9mtdw";
+    String? ssid = "Adkins";
+    String? password = "chuck1229";
 
     if (damperId != null && damperId.isNotEmpty) {
       _connectToDamper(damperId, ssid!, password!, _auth.currentUser!.uid);
@@ -228,6 +260,7 @@ class _MainPageState extends State<MainPage> {
                 id,
                 data['label'] ?? '',
                 data['position'] ?? 0,
+                data['lastHeartbeat'],
               )));
         });
       }
@@ -285,6 +318,7 @@ class _MainPageState extends State<MainPage> {
         itemCount: _dampers.length,
         itemBuilder: (context, index) {
           print("$index, ${_dampers.values.elementAt(index)}");
+          final damper = _dampers.values.elementAt(index);
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -297,14 +331,23 @@ class _MainPageState extends State<MainPage> {
                       Expanded(
                         child: TextFormField(
                           key: UniqueKey(),
-                          initialValue: _dampers.values.elementAt(index).label,
+                          initialValue: damper.label,
                           decoration: InputDecoration(
                             labelText: 'Damper Name',
                           ),
                           onChanged: (value) {
-                            _dampers.values.elementAt(index).label = value;
+                            damper.label = value;
                             _updateDampers();
                           },
+                        ),
+                      ),
+                      Text(damper.isOnline() ? "Online" : "Offline"),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: damper.isOnline() ? Colors.green : Colors.red,
+                          shape: BoxShape.circle,
                         ),
                       ),
                       IconButton(
@@ -319,11 +362,9 @@ class _MainPageState extends State<MainPage> {
                     children: <Widget>[
                       Expanded(
                         child: DamperSlider(
-                          initialValue:
-                              _dampers.values.elementAt(index).currentPosition,
+                          initialValue: damper.currentPosition,
                           onEnd: (endValue) {
-                            updatedSelected(
-                                _dampers.values.elementAt(index).id, endValue);
+                            updatedSelected(damper.id, endValue);
                           },
                         ),
                       ),
@@ -574,8 +615,6 @@ class _MainPageState extends State<MainPage> {
     _isScanning = true;
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Prevents the user from closing the dialog by tapping outside of it
       builder: (BuildContext context) {
         return AlertDialog(
           content: Row(
