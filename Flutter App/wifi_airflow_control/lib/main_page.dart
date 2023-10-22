@@ -306,68 +306,74 @@ class _MainPageState extends State<MainPage> {
           )
         ],
       ),
-      body: ListView.builder(
-        itemCount: _dampers.length,
-        itemBuilder: (context, index) {
-          print("$index, ${_dampers.values.elementAt(index)}");
-          final damper = _dampers.values.elementAt(index);
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: RefreshIndicator(
+          onRefresh: () async {
+            _loadDampers();
+          },
+          child: ListView.builder(
+            itemCount: _dampers.length,
+            itemBuilder: (context, index) {
+              print("$index, ${_dampers.values.elementAt(index)}");
+              final damper = _dampers.values.elementAt(index);
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: TextFormField(
-                          key: UniqueKey(),
-                          initialValue: damper.label,
-                          decoration: InputDecoration(
-                            labelText: 'Damper Name',
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              key: UniqueKey(),
+                              initialValue: damper.label,
+                              decoration: InputDecoration(
+                                labelText: 'Damper Name',
+                              ),
+                              onChanged: (value) {
+                                damper.label = value;
+                                _updateDampers();
+                              },
+                            ),
                           ),
-                          onChanged: (value) {
-                            damper.label = value;
-                            _updateDampers();
-                          },
-                        ),
+                          Text(damper.isOnline() ? "Online" : "Offline"),
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color:
+                                  damper.isOnline() ? Colors.green : Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () =>
+                                showDeleteDamperDialog(context, index),
+                          ),
+                        ],
                       ),
-                      Text(damper.isOnline() ? "Online" : "Offline"),
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: damper.isOnline() ? Colors.green : Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => showDeleteDamperDialog(context, index),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Expanded(
-                        child: DamperSlider(
-                          initialValue: damper.currentPosition,
-                          onEnd: (endValue) {
-                            updatedSelected(damper.id, endValue);
-                          },
-                        ),
+                      const SizedBox(height: 16.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Expanded(
+                            child: DamperSlider(
+                              initialValue: damper.currentPosition,
+                              onEnd: (endValue) {
+                                updatedSelected(damper.id, endValue);
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                ),
+              );
+            },
+          )),
       floatingActionButton: FloatingActionButton(
         onPressed: _addDamper,
         tooltip: 'Add new device',
