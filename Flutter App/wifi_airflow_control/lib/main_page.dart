@@ -199,17 +199,15 @@ class _MainPageState extends State<MainPage> {
               }
               print(event.snapshot.value);
               if (event.snapshot.value != null) {
-                if (event.snapshot.value is Map<String, dynamic> &&
-                    (event.snapshot.value as Map<String, dynamic>)['label'] ==
-                        null) {
-                  _db
-                      .child(userId)
-                      .child(damperId)
-                      .update({'label': 'Damper ${_dampers.length + 1}'});
-                  subscription?.cancel();
+                var data = event.snapshot.value as Map<dynamic, dynamic>;
+                if (data['label'] == null ||
+                    data['position'] == null ||
+                    data['lastHeartbeat'] == null) {
+                  return;
                 }
                 _showSuccessMessage();
                 _loadDampers();
+                subscription?.cancel();
               }
             });
           } catch (e) {
@@ -232,16 +230,10 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _addDamper() async {
-    // var result = await _showNewDamperDialog(context);
-    // String? damperId = result?['damperId'];
-    // String? ssid = result?['ssid'];
-    // String? password = result?['password'];
-
-    String? damperId = "08b61f82f372";
-    // String? ssid = "Zenfone 9_3070";
-    // String? password = "mme9h4xpeq9mtdw";
-    String? ssid = "Adkins";
-    String? password = "chuck1229";
+    var result = await _showNewDamperDialog(context);
+    String? damperId = result?['damperId'];
+    String? ssid = result?['ssid'];
+    String? password = result?['password'];
 
     if (damperId != null && damperId.isNotEmpty) {
       _connectToDamper(damperId, ssid!, password!, _auth.currentUser!.uid);
@@ -557,6 +549,17 @@ class _MainPageState extends State<MainPage> {
     String? ssid;
     String? password;
 
+    damperId = "08b61f82f372";
+    // ssid = "Zenfone 9_3070";
+    // password = "mme9h4xpeq9mtdw";
+    ssid = "Adkins";
+    password = "chuck1229";
+
+    // Create TextEditingControllers for each TextField
+    final damperIdController = TextEditingController(text: damperId);
+    final ssidController = TextEditingController(text: ssid);
+    final passwordController = TextEditingController(text: password);
+
     return showDialog<Map<String, String?>>(
       context: context,
       builder: (BuildContext context) {
@@ -566,6 +569,7 @@ class _MainPageState extends State<MainPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                controller: damperIdController,
                 onChanged: (value) {
                   damperId = value;
                 },
@@ -573,6 +577,7 @@ class _MainPageState extends State<MainPage> {
               ),
               SizedBox(height: 10), // Spacer
               TextField(
+                controller: ssidController,
                 onChanged: (value) {
                   ssid = value;
                 },
@@ -580,6 +585,7 @@ class _MainPageState extends State<MainPage> {
               ),
               SizedBox(height: 10), // Spacer
               TextField(
+                controller: passwordController,
                 onChanged: (value) {
                   password = value;
                 },

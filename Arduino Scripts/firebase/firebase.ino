@@ -3,6 +3,7 @@
 #include <ArduinoBLE.h>
 #include <FlashStorage.h>
 #include <utility/wifi_drv.h>
+#include <ArduinoHttpClient.h>
 
 #define DATABASE_URL "iflow-fe711-default-rtdb.firebaseio.com"
 #define DATABASE_SECRET "Y9Fjdu4CvnlpcBMtpTGx13hj4aQ5eFAwm4cQWhZn"
@@ -12,8 +13,14 @@ FirebaseData fbdo;
 
 Servo myservo;
 int position = 0; // Initial position
+
 String mac; // used as damper id
+String labelPath;
 String positionPath; // firebase path to position value of this damper
+String lastHeartbeatPath;
+
+unsigned long initialUnixTime = 0;     // Unix timestamp from server
+unsigned long initialMillis = 0;       // millis() value when unixtime was retrieved
 
 // Define the maximum lengths for the strings (including null terminators)
 #define MAX_SSID_LENGTH 32
@@ -37,11 +44,15 @@ FlashStorage(flashStorage, WifiCredentials);
 BLEService wifiService("1800");  // Use a standard GATT service number
 BLEStringCharacteristic xCharacteristic("2AC4", BLERead | BLEWrite, 126);
 
+WiFiClient wifi;
+HttpClient client = HttpClient(wifi, "worldtimeapi.org", 80);
+
 // Global variables for WiFi and Firebase
 String ssid, password, userId;
 
 void setup() {
   Serial.begin(9600);
+  delay(5000);
   //while (!Serial);  // Wait for serial connection
   Serial.println();
   Serial.println("setup started");
@@ -71,21 +82,34 @@ void setup() {
   connectToFirebase();
 
   myservo.attach(9);
-  myservo.write(position);
   
-  positionPath = userId + "/" + mac + "/position";
-  Firebase.setInt(fbdo, positionPath, position);
+  String devicePath = userId + "/" + mac;
+  positionPath = devicePath + "/position";
+  lastHeartbeatPath = devicePath + "/lastHeartbeat";
+  labelPath = devicePath + "/label";
 
   // Store received values in flash storage
   if (!storedCredentials.initialized) {
+    setLabel();
+    setPosition();
+    getCurrentMillis();
+    sendHeartbeat();
+    Serial.println("Writing to flash storage");
     flashStorage.write(newCredentials);
+  }else if (Firebase.getInt(fbdo, positionPath)) {
+    position = fbdo.intData();
+    Serial.println("retreived position: " + String(position));
+    myservo.write(position);
+    getCurrentMillis();
+    sendHeartbeat();
   }
 }
 
 void loop() {
   // Check Firebase for servo position updates
-  Serial.println("Getting position...");
+  Serial.print("Getting position... ");
   if (Firebase.getInt(fbdo, positionPath)) {
+    Serial.println(fbdo.intData());
     int newPosition = fbdo.intData();
     if (newPosition != position) {
       myservo.write(newPosition);
@@ -98,12 +122,17 @@ void loop() {
     Serial.println("Failed to retrieve position from Firebase: " + fbdo.errorReason());
     if(fbdo.errorReason() == "path not exist"){
       Serial.println("resetting...");
-      myservo.write(0);
+      position = 0;
+      myservo.write(position);
       resetWifiModule();
       eraseWifiCredentials();
       initialize();
       connectToWiFi();
       connectToFirebase();
+      setPosition();
+      setLabel();
+      getCurrentMillis();
+      sendHeartbeat();
       flashStorage.write(newCredentials);
     }
   }
@@ -198,11 +227,54 @@ void connectToFirebase() {
   Firebase.reconnectWiFi(true);
 }
 
-void sendHeartbeat() {
-    unsigned long currentMillis = millis();
-    String devicePath = userId + "/" + mac + "/lastHeartbeat";
-    Firebase.setFloat(fbdo, devicePath, currentMillis);
+void setPosition() {
+  Serial.println("Uploading position: " + String(position));
+  while(!Firebase.setInt(fbdo, positionPath, position));
 }
+
+void setLabel() {
+  String label = "Damper " + mac;
+  Serial.println("Uploading label: " + label);
+  while(!Firebase.setString(fbdo, labelPath, label));
+}
+
+void sendHeartbeat() {
+  unsigned long currentUnixTime = initialUnixTime + (millis() - initialMillis) / 1000;
+  Serial.print("currentUnixTime: ");
+  Serial.println(currentUnixTime);
+
+  while(!Firebase.setFloat(fbdo, lastHeartbeatPath, currentUnixTime));
+}
+
+void getCurrentMillis(){
+  Serial.println("Getting Unix timestamp...");
+
+  int httpResponseCode = client.get("/api/ip");
+
+  String response = client.responseBody();
+  Serial.println(response);
+  String unixtime = extractUnixTime(response);
+  Serial.println("Unixtime: " + unixtime);
+  if(unixtime){
+    initialUnixTime = unixtime.toInt();
+    initialMillis = millis();
+  }
+}
+
+String extractUnixTime(const String &response) {
+  const String searchToken = "\"unixtime\":";
+  int startIndex = response.indexOf(searchToken);
+  
+  if (startIndex == -1) {
+    return "Not Found";
+  }
+  
+  startIndex += searchToken.length();
+  int endIndex = response.indexOf(",", startIndex);
+  
+  return response.substring(startIndex, endIndex);
+}
+
 
 void eraseWifiCredentials() {
   ssid = "";

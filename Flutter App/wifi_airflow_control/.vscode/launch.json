@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "wifi_airflow_control",
+            "name": "iFlow",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "wifi_airflow_control (profile mode)",
+            "name": "iFlow (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "wifi_airflow_control (release mode)",
+            "name": "iFlow (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

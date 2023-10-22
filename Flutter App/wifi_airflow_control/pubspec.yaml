@@ -1,4 +1,4 @@
-name: wifi_airflow_control
+name: iFlow
 description: A mobile application that connects to air-duct dampers equipped with a motor and wifi adapter that enables the user to control the airflow to separate rooms/vents/areas.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

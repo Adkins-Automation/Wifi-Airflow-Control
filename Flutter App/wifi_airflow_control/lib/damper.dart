@@ -7,9 +7,9 @@ class Damper {
   Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat);
 
   bool isOnline() {
-    return (lastHeartbeat != null &&
-        (DateTime.now().millisecondsSinceEpoch - lastHeartbeat!) <=
-            6 * 60 * 1000);
+    return ((lastHeartbeat != null) &&
+        ((DateTime.now().millisecondsSinceEpoch - (lastHeartbeat! * 1000)) <=
+            6 * 60 * 1000));
   }
 
   @override

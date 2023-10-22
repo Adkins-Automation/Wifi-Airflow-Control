@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:wifi_airflow_control/user.dart';
+import 'package:iFlow/user.dart';
 
 class DatabaseHelper {
   DatabaseHelper._privateConstructor();
