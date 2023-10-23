@@ -267,7 +267,11 @@ class _MainPageState extends State<MainPage> {
   void _uploadDampers() {
     final dampersData = {
       for (var damper in _dampers.values)
-        damper.id: {'label': damper.label, 'position': damper.currentPosition}
+        damper.id: {
+          'label': damper.label,
+          'position': damper.currentPosition,
+          'lastHeartbeat': damper.lastHeartbeat
+        }
     };
     _db.child(_auth.currentUser!.uid).set(dampersData).then((_) {
       print("Dampers updated successfully in Realtime Database");
