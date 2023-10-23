@@ -246,6 +246,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _downloadDampers() {
+    if (_auth.currentUser == null) return;  
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
