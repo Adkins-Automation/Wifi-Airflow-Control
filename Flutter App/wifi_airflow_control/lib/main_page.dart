@@ -24,7 +24,7 @@ class _MainPageState extends State<MainPage> {
   User? _user;
   Map<String, Damper> _dampers = {};
   FlutterBlue flutterBlue = FlutterBlue.instance;
-  bool _isScanning = false;
+  bool _isConnecting = false;
 
   @override
   void initState() {
@@ -127,7 +127,7 @@ class _MainPageState extends State<MainPage> {
     var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
 
-    _showLoadingDialog();
+    _showConnectingDialog();
 
     flutterBlue.startScan(
         withServices: [Guid(wifiServiceUUID)],
@@ -142,7 +142,7 @@ class _MainPageState extends State<MainPage> {
     StreamSubscription<List<ScanResult>>? subscription;
     subscription = flutterBlue.scanResults.listen((results) async {
       // Check if dialog is still active
-      if (!_isScanning) {
+      if (!_isConnecting) {
         flutterBlue.stopScan();
         subscription?.cancel();
         return;
@@ -194,7 +194,7 @@ class _MainPageState extends State<MainPage> {
             subscription =
                 _db.child(userId).child(damperId).onValue.listen((event) {
               // Check if dialog is still active
-              if (!_isScanning) {
+              if (!_isConnecting) {
                 subscription?.cancel();
                 return;
               }
@@ -224,7 +224,7 @@ class _MainPageState extends State<MainPage> {
     // Cancel the subscription after the scan timeout
     Future.delayed(Duration(seconds: 30), () {
       subscription?.cancel();
-      if (!seenDevices.contains(damperId) && _isScanning) {
+      if (!seenDevices.contains(damperId) && _isConnecting) {
         _showFailureMessage("Device not found");
       }
     });
@@ -496,14 +496,12 @@ class _MainPageState extends State<MainPage> {
       BuildContext context) async {
     return showDialog<Map<String, String?>>(
       context: context,
-      builder: (BuildContext context) {
-        return NewDamperDialog().build(context);
-      },
+      builder: (BuildContext context) => NewDamperDialog(),
     );
   }
 
-  void _showLoadingDialog() {
-    _isScanning = true;
+  void _showConnectingDialog() {
+    _isConnecting = true;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -517,18 +515,18 @@ class _MainPageState extends State<MainPage> {
           ),
         );
       },
-    ).then((value) => _isScanning = false);
+    ).then((value) => _isConnecting = false);
   }
 
   void _showSuccessMessage() {
-    if (_isScanning) Navigator.of(context).pop(); // Close the loading dialog
+    if (_isConnecting) Navigator.of(context).pop(); // Close the loading dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connected successfully!')),
     );
   }
 
   void _showFailureMessage(reason) {
-    if (_isScanning) Navigator.of(context).pop(); // Close the loading dialog
+    if (_isConnecting) Navigator.of(context).pop(); // Close the loading dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connection failed: $reason')),
     );
