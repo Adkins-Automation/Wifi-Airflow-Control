@@ -449,7 +449,13 @@ class _MainPageState extends State<MainPage> {
                   ElevatedButton(
                     onPressed: () {
                       // Perform sign-in logic
+                      var email = emailController.text.trim();
+                      print("email: $email");
+                      var password = passwordController.text.trim();
+                      print("password: $password");
+                      
                       _signIn(
+
                         emailController.text.trim(),
                         passwordController.text.trim(),
                       ).then((response) {
