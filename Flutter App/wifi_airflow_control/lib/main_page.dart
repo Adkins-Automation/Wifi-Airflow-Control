@@ -96,7 +96,7 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  Future<bool> requestBluetoothScanPermission() async {
+  Future<bool> _requestBluetoothScanPermission() async {
     // This maps the permission_handler's Permission to the Android-specific string
     Map<Permission, PermissionStatus> statuses =
         await [Permission.bluetoothScan, Permission.bluetoothConnect].request();
@@ -122,7 +122,7 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> _connectToDamper(
       String damperId, String ssid, String password, String userId) async {
-    var granted = await requestBluetoothScanPermission();
+    var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
 
     _showLoadingDialog();
@@ -232,7 +232,7 @@ class _MainPageState extends State<MainPage> {
 
   void _addDamper() async {
     if (_user == null) {
-      showSignInDialog(context);
+      _showSignInDialog(context);
       return;
     }
     var result = await _showNewDamperDialog(context);
@@ -277,7 +277,7 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void deleteRadioButtonGroup(String id) {
+  void _deleteRadioButtonGroup(String id) {
     setState(() {
       print(_dampers[id]);
       _dampers.remove(id);
@@ -285,7 +285,7 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void updatedSelected(String id, int? value) {
+  void _updatedSelected(String id, int? value) {
     setState(() {
       _dampers[id]?.currentPosition = value!;
       _updateDampers();
@@ -302,10 +302,10 @@ class _MainPageState extends State<MainPage> {
             icon: Icon(Icons.account_circle),
             onPressed: () {
               if (_user == null) {
-                showSignInDialog(context);
+                _showSignInDialog(context);
               } else {
                 // Prompt to confirm sign out
-                showSignOutDialog(context);
+                _showSignOutDialog(context);
               }
             },
           )
@@ -355,7 +355,7 @@ class _MainPageState extends State<MainPage> {
                           IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () =>
-                                showDeleteDamperDialog(context, index),
+                                _showDeleteDamperDialog(context, index),
                           ),
                         ],
                       ),
@@ -367,7 +367,7 @@ class _MainPageState extends State<MainPage> {
                             child: DamperSlider(
                               initialValue: damper.currentPosition,
                               onEnd: (endValue) {
-                                updatedSelected(damper.id, endValue);
+                                _updatedSelected(damper.id, endValue);
                               },
                             ),
                           ),
@@ -387,7 +387,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  void showDeleteDamperDialog(BuildContext context, int index) {
+  void _showDeleteDamperDialog(BuildContext context, int index) {
     showDialog(
         context: context,
         builder: (BuildContext context) => Dialog(
@@ -408,7 +408,7 @@ class _MainPageState extends State<MainPage> {
                         children: [
                           TextButton(
                             onPressed: () {
-                              deleteRadioButtonGroup(
+                              _deleteRadioButtonGroup(
                                   _dampers.values.elementAt(index).id);
                               Navigator.pop(context);
                             },
@@ -432,7 +432,7 @@ class _MainPageState extends State<MainPage> {
             )));
   }
 
-  void showSignInDialog(BuildContext context) {
+  void _showSignInDialog(BuildContext context) {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
     final scaffold = ScaffoldMessenger.of(context);
@@ -522,7 +522,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  void showSignOutDialog(BuildContext context) {
+  void _showSignOutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) => Dialog(
