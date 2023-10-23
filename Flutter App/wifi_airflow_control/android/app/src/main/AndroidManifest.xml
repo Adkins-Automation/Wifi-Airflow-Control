@@ -6,8 +6,9 @@
                  android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="wifi_airflow_control"
+        android:label="iFlow"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
