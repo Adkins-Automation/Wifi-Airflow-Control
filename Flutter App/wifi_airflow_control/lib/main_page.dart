@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:i_flow/constants.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'damper.dart';
 import 'damper_slider.dart';
@@ -17,8 +18,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
-  final _db = FirebaseDatabase.instance
-      .refFromURL("https://iflow-fe711-default-rtdb.firebaseio.com/");
+  final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
   User? _user;
   Map<String, Damper> _dampers = {};
   FlutterBlue flutterBlue = FlutterBlue.instance;
@@ -127,7 +127,6 @@ class _MainPageState extends State<MainPage> {
 
     _showLoadingDialog();
 
-    String wifiServiceUUID = '00001800-0000-1000-8000-00805f9b34fb';
     flutterBlue.startScan(
         withServices: [Guid(wifiServiceUUID)],
         timeout: Duration(seconds: 30)).catchError((error) {
@@ -181,10 +180,9 @@ class _MainPageState extends State<MainPage> {
             BluetoothService wifiService = services.firstWhere(
                 (service) => service.uuid.toString() == wifiServiceUUID);
 
-            BluetoothCharacteristic xCharacteristic =
-                wifiService.characteristics.firstWhere((c) =>
-                    c.uuid.toString() ==
-                    "00002ac4-0000-1000-8000-00805f9b34fb");
+            BluetoothCharacteristic xCharacteristic = wifiService
+                .characteristics
+                .firstWhere((c) => c.uuid.toString() == wifiCharacteristicUUID);
 
             var x = '$ssid;$password;$userId';
 
