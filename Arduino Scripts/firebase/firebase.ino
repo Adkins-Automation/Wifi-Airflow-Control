@@ -137,7 +137,7 @@ void loop() {
     }
   }
 
-  delay(1000); // Delay to prevent rapid Firebase requests. Adjust as needed.
+  delay(5000); // Delay to prevent rapid Firebase requests. Adjust as needed.
 }
 
 void initialize(){
@@ -239,11 +239,11 @@ void setLabel() {
 }
 
 void sendHeartbeat() {
-  unsigned long currentUnixTime = initialUnixTime + (millis() - initialMillis) / 1000;
-  Serial.print("currentUnixTime: ");
-  Serial.println(currentUnixTime);
+  unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
+  Serial.print("lastHeartbeat: ");
+  Serial.println(unixtime);
 
-  while(!Firebase.setFloat(fbdo, lastHeartbeatPath, currentUnixTime));
+  while(!Firebase.setFloat(fbdo, lastHeartbeatPath, unixtime));
 }
 
 void getCurrentMillis(){
@@ -258,6 +258,8 @@ void getCurrentMillis(){
   if(unixtime){
     initialUnixTime = unixtime.toInt();
     initialMillis = millis();
+    Serial.print("initialMillis: ");
+    Serial.println(initialMillis);
   }
 }
 
