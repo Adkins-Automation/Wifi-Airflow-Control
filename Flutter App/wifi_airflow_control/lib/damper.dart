@@ -7,6 +7,10 @@ class Damper {
   Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat);
 
   bool isOnline() {
+    if (lastHeartbeat == null) {
+      return false;
+    }
+
     var tmpHb = lastHeartbeat! * 1000;
     var now = DateTime.now().millisecondsSinceEpoch;
     var sixSeconds = 6 * 1000;
