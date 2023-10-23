@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:i_flow/constants.dart';
+import 'package:i_flow/sign_out_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'damper.dart';
 import 'damper_slider.dart';
@@ -487,32 +488,7 @@ class _MainPageState extends State<MainPage> {
   void _showSignOutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Are you sure you want to sign out?',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Perform sign-out logic
-                  _signOut();
-                  Navigator.pop(context);
-                },
-                child: Text('Sign Out'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (BuildContext context) => SignOutDialog(_signOut),
     );
   }
 
