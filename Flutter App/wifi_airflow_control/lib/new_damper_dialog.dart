@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:i_flow/qr_scan_page.dart';
 
 class NewDamperDialog extends StatelessWidget {
   @override
@@ -50,6 +51,14 @@ class NewDamperDialog extends StatelessWidget {
         ],
       ),
       actions: <Widget>[
+        TextButton(
+          child: Text('SCAN QR CODE'),
+          onPressed: () {
+            // open qr scan page
+            Navigator.push(context,
+                MaterialPageRoute(builder: ((context) => QRScanPage())));
+          },
+        ),
         TextButton(
           child: Text('CANCEL'),
           onPressed: () {
