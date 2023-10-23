@@ -9,6 +9,7 @@ import 'package:i_flow/constants.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'damper.dart';
 import 'damper_slider.dart';
+import 'delete_damper_dialog.dart';
 import 'new_damper_dialog.dart';
 
 class MainPage extends StatefulWidget {
@@ -30,14 +31,14 @@ class _MainPageState extends State<MainPage> {
     _initUser();
 
     Timer.periodic(Duration(minutes: 1), (timer) {
-      _loadDampers();
+      _downloadDampers();
     });
   }
 
   void _initUser() {
     _user = _auth.currentUser;
     if (_user != null) {
-      _loadDampers();
+      _downloadDampers();
     }
   }
 
@@ -205,7 +206,7 @@ class _MainPageState extends State<MainPage> {
                   return;
                 }
                 _showSuccessMessage();
-                _loadDampers();
+                _downloadDampers();
                 subscription?.cancel();
               }
             });
@@ -243,7 +244,7 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  void _loadDampers() {
+  void _downloadDampers() {
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
@@ -262,7 +263,7 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void _updateDampers() {
+  void _uploadDampers() {
     final dampersData = {
       for (var damper in _dampers.values)
         damper.id: {'label': damper.label, 'position': damper.currentPosition}
@@ -275,18 +276,18 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void _deleteRadioButtonGroup(String id) {
+  void _deleteDamper(String id) {
     setState(() {
       print(_dampers[id]);
       _dampers.remove(id);
-      _updateDampers();
+      _uploadDampers();
     });
   }
 
-  void _updatedSelected(String id, int? value) {
+  void _updatePosition(String id, int? value) {
     setState(() {
       _dampers[id]?.currentPosition = value!;
-      _updateDampers();
+      _uploadDampers();
     });
   }
 
@@ -311,7 +312,7 @@ class _MainPageState extends State<MainPage> {
       ),
       body: RefreshIndicator(
           onRefresh: () async {
-            _loadDampers();
+            _downloadDampers();
           },
           child: ListView.builder(
             itemCount: _dampers.length,
@@ -336,7 +337,7 @@ class _MainPageState extends State<MainPage> {
                               ),
                               onChanged: (value) {
                                 damper.label = value;
-                                _updateDampers();
+                                _uploadDampers();
                               },
                             ),
                           ),
@@ -365,7 +366,7 @@ class _MainPageState extends State<MainPage> {
                             child: DamperSlider(
                               initialValue: damper.currentPosition,
                               onEnd: (endValue) {
-                                _updatedSelected(damper.id, endValue);
+                                _updatePosition(damper.id, endValue);
                               },
                             ),
                           ),
@@ -386,48 +387,11 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _showDeleteDamperDialog(BuildContext context, int index) {
+    DeleteDamperDialog deleteDamperDialog =
+        DeleteDamperDialog(_dampers.values.elementAt(index), _deleteDamper);
     showDialog(
         context: context,
-        builder: (BuildContext context) => Dialog(
-                child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                          'Are you sure you want to remove ${_dampers.values.elementAt(index).label}?'),
-                      const SizedBox(height: 15),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              _deleteRadioButtonGroup(
-                                  _dampers.values.elementAt(index).id);
-                              Navigator.pop(context);
-                            },
-                            child: const Text(
-                              'Delete',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            )));
+        builder: (BuildContext context) => deleteDamperDialog.build(context));
   }
 
   void _showSignInDialog(BuildContext context) {
@@ -486,7 +450,7 @@ class _MainPageState extends State<MainPage> {
                         if (response == "pass") {
                           scaffold.showSnackBar(
                               SnackBar(content: Text("Signed In")));
-                          _loadDampers();
+                          _downloadDampers();
                           Navigator.pop(context);
                         } else if (response == "fail") {
                           setState(() {
