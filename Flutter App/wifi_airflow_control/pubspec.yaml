@@ -48,6 +48,7 @@ dependencies:
 
   flutter_blue: ^0.8.0
   permission_handler: ^11.0.1
+  qr_code_scanner: ^1.0.1
 
 dev_dependencies:
   flutter_test:
