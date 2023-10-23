@@ -230,6 +230,10 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _addDamper() async {
+    if (_user == null) {
+      showSignInDialog(context);
+      return;
+    }
     var result = await _showNewDamperDialog(context);
     String? damperId = result?['damperId'];
     String? ssid = result?['ssid'];
