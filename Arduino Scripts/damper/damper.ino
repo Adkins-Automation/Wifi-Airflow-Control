@@ -242,7 +242,7 @@ void sendHeartbeat() {
   Serial.print("lastHeartbeat: ");
   Serial.println(unixtime);
 
-  while(!Firebase.setFloat(fbdo, lastHeartbeatPath, unixtime));
+  while(!Firebase.setInt(fbdo, lastHeartbeatPath, unixtime));
 }
 
 void getCurrentMillis(){
