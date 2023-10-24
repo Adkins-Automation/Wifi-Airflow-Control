@@ -115,7 +115,7 @@ void loop() {
       myservo.write(newPosition);
       position = newPosition;
     }
-
+    delay(2000); // Delay to prevent rapid Firebase requests. Adjust as needed.
     sendHeartbeat();
   } else {
     // Handle error if needed
@@ -137,7 +137,7 @@ void loop() {
     }
   }
 
-  delay(5000); // Delay to prevent rapid Firebase requests. Adjust as needed.
+  delay(2000); // Delay to prevent rapid Firebase requests. Adjust as needed.
 }
 
 void initialize(){
