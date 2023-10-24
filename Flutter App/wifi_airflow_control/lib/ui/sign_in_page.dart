@@ -28,11 +28,7 @@ class SignInPageState extends State<SignInPage> {
     } catch (e) {
       // Handle sign-in errors
       print('Sign-in failed: $e');
-      if (e.toString().startsWith("[firebase_auth/user-not-found]")) {
-        return "user-not-found";
-      }
-
-      return "fail";
+      return e.toString().split('] ')[1];
     }
   }
 
@@ -48,14 +44,6 @@ class SignInPageState extends State<SignInPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Sign In',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (_error != null) SizedBox(height: 16),
             if (_error != null)
               Text(_error!,
                   style: TextStyle(
@@ -87,13 +75,9 @@ class SignInPageState extends State<SignInPage> {
                   if (response == "pass") {
                     scaffold.showSnackBar(SnackBar(content: Text("Signed In")));
                     Navigator.pop(context, _user);
-                  } else if (response == "fail") {
+                  } else {
                     setState(() {
-                      _error = "Invalid username or password";
-                    });
-                  } else if (response == "user-not-found") {
-                    setState(() {
-                      _error = "User not found";
+                      _error = response;
                     });
                   }
                 }); // _signIn
