@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:i_flow/user.dart';
+import 'package:i_flow/dto/user.dart';
 
 class DatabaseHelper {
   DatabaseHelper._privateConstructor();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'main_page.dart';
+import 'util/firebase_options.dart';
+import 'ui/main_page.dart';
 
 class App extends StatefulWidget {
   @override

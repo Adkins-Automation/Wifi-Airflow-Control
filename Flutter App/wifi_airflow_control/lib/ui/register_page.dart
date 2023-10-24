@@ -1,12 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterPage extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => RegisterScreenState();
+  State<StatefulWidget> createState() => RegisterPageState();
 }
 
-class RegisterScreenState extends State<RegisterScreen> {
+class RegisterPageState extends State<RegisterPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
   final emailController = TextEditingController();

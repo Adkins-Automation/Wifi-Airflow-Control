@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:i_flow/register_screen.dart';
+import 'package:i_flow/ui/register_page.dart';
 
-class SignInScreen extends StatefulWidget {
+class SignInPage extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => SignInScreenState();
+  State<StatefulWidget> createState() => SignInPageState();
 }
 
-class SignInScreenState extends State<SignInScreen> {
+class SignInPageState extends State<SignInPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
   String? _error;
@@ -105,7 +105,7 @@ class SignInScreenState extends State<SignInScreen> {
                   Navigator.push<User?>(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => RegisterScreen(),
+                        builder: (context) => RegisterPage(),
                       )).then((value) {
                     if (value != null) Navigator.pop(context, value);
                   });

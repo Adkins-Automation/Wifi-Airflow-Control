@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:i_flow/qr_scan_page.dart';
+import 'package:i_flow/ui/qr_scan_page.dart';
 
-class NewDamperScreen extends StatefulWidget {
+class NewDamperPage extends StatefulWidget {
   @override
-  NewDamperScreenState createState() => NewDamperScreenState();
+  NewDamperPageState createState() => NewDamperPageState();
 }
 
-class NewDamperScreenState extends State<NewDamperScreen> {
+class NewDamperPageState extends State<NewDamperPage> {
   String? damperId;
   String? ssid;
   String password = ''; // optional

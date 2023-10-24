@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:i_flow/constants.dart';
-import 'package:i_flow/sign_in_screen.dart';
-import 'package:i_flow/sign_out_dialog.dart';
+import 'package:i_flow/util/constants.dart';
+import 'package:i_flow/ui/sign_in_page.dart';
+import 'package:i_flow/ui/dialogs/sign_out_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'damper.dart';
-import 'damper_slider.dart';
-import 'delete_damper_dialog.dart';
-import 'new_damper_screen.dart';
+import '../dto/damper.dart';
+import 'widgets/damper_slider.dart';
+import 'dialogs/delete_damper_dialog.dart';
+import 'new_damper_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -371,7 +371,7 @@ class _MainPageState extends State<MainPage> {
 
   Future<User?> _showSignInDialog(BuildContext context) async {
     return await Navigator.push<User?>(
-        context, MaterialPageRoute(builder: ((context) => SignInScreen())));
+        context, MaterialPageRoute(builder: ((context) => SignInPage())));
   }
 
   void _showSignOutDialog(BuildContext context) {
@@ -385,7 +385,7 @@ class _MainPageState extends State<MainPage> {
       BuildContext context) async {
     return await Navigator.push<Map<String, String?>>(
       context,
-      MaterialPageRoute(builder: (BuildContext context) => NewDamperScreen()),
+      MaterialPageRoute(builder: (BuildContext context) => NewDamperPage()),
     );
   }
 
