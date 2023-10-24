@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:i_flow/register_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   @override
@@ -9,7 +10,7 @@ class SignInScreen extends StatefulWidget {
 class SignInScreenState extends State<SignInScreen> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
-  bool success_ = true;
+  String? _error;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -35,25 +36,6 @@ class SignInScreenState extends State<SignInScreen> {
     }
   }
 
-  Future<bool> _register(String email, String password) async {
-    // Perform registration logic using Firebase Authentication
-    try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      setState(() {
-        _user = userCredential.user;
-      });
-      return true;
-    } catch (e) {
-      // Handle registration errors
-      print('Registration failed: $e');
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final scaffold = ScaffoldMessenger.of(context);
@@ -73,9 +55,9 @@ class SignInScreenState extends State<SignInScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (!success_) SizedBox(height: 16),
-            if (!success_)
-              Text("Invalid email or password",
+            if (_error != null) SizedBox(height: 16),
+            if (_error != null)
+              Text(_error!,
                   style: TextStyle(
                     color: Colors.red,
                   )),
@@ -104,31 +86,31 @@ class SignInScreenState extends State<SignInScreen> {
                 ).then((response) {
                   if (response == "pass") {
                     scaffold.showSnackBar(SnackBar(content: Text("Signed In")));
-                    //_downloadDampers();
                     Navigator.pop(context, _user);
                   } else if (response == "fail") {
                     setState(() {
-                      success_ = false;
+                      _error = "Invalid username or password";
                     });
                   } else if (response == "user-not-found") {
-                    _register(emailController.text.trim(),
-                            passwordController.text.trim())
-                        .then((success) {
-                      if (success) {
-                        scaffold.showSnackBar(
-                            SnackBar(content: Text("Account registered")));
-                        Navigator.pop(context, _user);
-                      } else {
-                        setState(() {
-                          success_ = false;
-                        });
-                      }
+                    setState(() {
+                      _error = "User not found";
                     });
                   }
                 }); // _signIn
               },
               child: Text('Sign In'),
             ),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.push<User?>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RegisterScreen(),
+                      )).then((value) {
+                    if (value != null) Navigator.pop(context, value);
+                  });
+                },
+                child: Text('Register')),
           ],
         ),
       ),
