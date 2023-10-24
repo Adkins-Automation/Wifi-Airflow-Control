@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:i_flow/constants.dart';
+import 'package:i_flow/sign_in_screen.dart';
 import 'package:i_flow/sign_out_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'damper.dart';
@@ -40,47 +41,6 @@ class _MainPageState extends State<MainPage> {
     _user = _auth.currentUser;
     if (_user != null) {
       _downloadDampers();
-    }
-  }
-
-  Future<String> _signIn(String email, String password) async {
-    // Perform sign-in logic using Firebase Authentication
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      setState(() {
-        _user = userCredential.user;
-      });
-      return "pass";
-    } catch (e) {
-      // Handle sign-in errors
-      print('Sign-in failed: $e');
-      if (e.toString().startsWith("[firebase_auth/user-not-found]")) {
-        return "user-not-found";
-      }
-
-      return "fail";
-    }
-  }
-
-  Future<bool> _register(String email, String password) async {
-    // Perform registration logic using Firebase Authentication
-    try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      setState(() {
-        _user = userCredential.user;
-      });
-      return true;
-    } catch (e) {
-      // Handle registration errors
-      print('Registration failed: $e');
-      return false;
     }
   }
 
@@ -310,9 +270,13 @@ class _MainPageState extends State<MainPage> {
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.account_circle),
-            onPressed: () {
+            onPressed: () async {
               if (_user == null) {
-                _showSignInDialog(context);
+                User? user = await _showSignInDialog(context);
+                setState(() {
+                  _user = user;
+                  if (_user != null) _downloadDampers();
+                });
               } else {
                 // Prompt to confirm sign out
                 _showSignOutDialog(context);
@@ -405,99 +369,9 @@ class _MainPageState extends State<MainPage> {
         builder: (BuildContext context) => deleteDamperDialog.build(context));
   }
 
-  void _showSignInDialog(BuildContext context) {
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    final scaffold = ScaffoldMessenger.of(context);
-
-    // Show sign-in/register options
-    showDialog(
-      context: context,
-      builder: (context) {
-        bool success_ = true;
-        return StatefulBuilder(builder: (context, setState) {
-          return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (!success_) SizedBox(height: 16),
-                  if (!success_)
-                    Text("Invalid email or password",
-                        style: TextStyle(
-                          color: Colors.red,
-                        )),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Perform sign-in logic
-                      var email = emailController.text.trim();
-                      print("email: $email");
-                      var password = passwordController.text.trim();
-                      print("password: $password");
-
-                      _signIn(
-                        emailController.text.trim(),
-                        passwordController.text.trim(),
-                      ).then((response) {
-                        if (response == "pass") {
-                          scaffold.showSnackBar(
-                              SnackBar(content: Text("Signed In")));
-                          _downloadDampers();
-                          Navigator.pop(context);
-                        } else if (response == "fail") {
-                          setState(() {
-                            success_ = false;
-                          });
-                        } else if (response == "user-not-found") {
-                          _register(emailController.text.trim(),
-                                  passwordController.text.trim())
-                              .then((success) {
-                            if (success) {
-                              scaffold.showSnackBar(SnackBar(
-                                  content: Text("Account registered")));
-                              Navigator.pop(context);
-                            } else {
-                              setState(() {
-                                success_ = false;
-                              });
-                            }
-                          });
-                        }
-                      });
-                    },
-                    child: Text('Sign In'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-      },
-    );
+  Future<User?> _showSignInDialog(BuildContext context) async {
+    return await Navigator.push<User?>(
+        context, MaterialPageRoute(builder: ((context) => SignInScreen())));
   }
 
   void _showSignOutDialog(BuildContext context) {
