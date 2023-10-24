@@ -192,7 +192,11 @@ class _MainPageState extends State<MainPage> {
 
   void _addDamper() async {
     if (_auth.currentUser == null) {
-      _showSignInDialog(context);
+      User? user = await _showSignInDialog(context);
+      setState(() {
+        _user = user;
+        if (_user != null) _downloadDampers();
+      });
       return;
     }
     var result = await _showNewDamperDialog(context);
@@ -294,6 +298,7 @@ class _MainPageState extends State<MainPage> {
             itemBuilder: (context, index) {
               print("$index, ${_dampers.values.elementAt(index)}");
               final damper = _dampers.values.elementAt(index);
+              final isOnline = damper.isOnline();
               return Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -316,13 +321,12 @@ class _MainPageState extends State<MainPage> {
                               },
                             ),
                           ),
-                          Text(damper.isOnline() ? "Online" : "Offline"),
+                          Text(isOnline ? "Online" : "Offline"),
                           Container(
                             width: 10,
                             height: 10,
                             decoration: BoxDecoration(
-                              color:
-                                  damper.isOnline() ? Colors.green : Colors.red,
+                              color: isOnline ? Colors.green : Colors.red,
                               shape: BoxShape.circle,
                             ),
                           ),
