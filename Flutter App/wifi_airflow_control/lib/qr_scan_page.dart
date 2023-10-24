@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
@@ -10,6 +12,7 @@ class QRScanPageState extends State<QRScanPage> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   Barcode? result;
   QRViewController? controller;
+  StreamSubscription<Barcode>? subscription;
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +43,16 @@ class QRScanPageState extends State<QRScanPage> {
     setState(() {
       this.controller = controller;
     });
-    controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        result = scanData;
-      });
+
+    subscription = controller.scannedDataStream.listen((scanData) {
+      subscription?.cancel();
+      Navigator.pop(context, scanData.code);
     });
   }
 
   @override
   void dispose() {
+    subscription?.cancel();
     controller?.dispose();
     super.dispose();
   }

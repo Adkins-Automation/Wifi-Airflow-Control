@@ -11,7 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'damper.dart';
 import 'damper_slider.dart';
 import 'delete_damper_dialog.dart';
-import 'new_damper_dialog.dart';
+import 'new_damper_screen.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -231,7 +231,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _addDamper() async {
-    if (_user == null) {
+    if (_auth.currentUser == null) {
       _showSignInDialog(context);
       return;
     }
@@ -240,13 +240,18 @@ class _MainPageState extends State<MainPage> {
     String? ssid = result?['ssid'];
     String? password = result?['password'];
 
-    if (damperId != null && damperId.isNotEmpty) {
-      _connectToDamper(damperId, ssid!, password!, _auth.currentUser!.uid);
+    if (damperId != null &&
+        damperId.isNotEmpty &&
+        ssid != null &&
+        ssid.isNotEmpty &&
+        password != null &&
+        password.isNotEmpty) {
+      _connectToDamper(damperId, ssid, password, _auth.currentUser!.uid);
     }
   }
 
   void _downloadDampers() {
-    if (_auth.currentUser == null) return;  
+    if (_auth.currentUser == null) return;
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
@@ -453,9 +458,8 @@ class _MainPageState extends State<MainPage> {
                       print("email: $email");
                       var password = passwordController.text.trim();
                       print("password: $password");
-                      
-                      _signIn(
 
+                      _signIn(
                         emailController.text.trim(),
                         passwordController.text.trim(),
                       ).then((response) {
@@ -505,9 +509,9 @@ class _MainPageState extends State<MainPage> {
 
   Future<Map<String, String?>?> _showNewDamperDialog(
       BuildContext context) async {
-    return showDialog<Map<String, String?>>(
-      context: context,
-      builder: (BuildContext context) => NewDamperDialog(),
+    return await Navigator.push<Map<String, String?>>(
+      context,
+      MaterialPageRoute(builder: (BuildContext context) => NewDamperScreen()),
     );
   }
 
