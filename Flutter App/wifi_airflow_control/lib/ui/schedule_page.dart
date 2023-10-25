@@ -127,6 +127,17 @@ class SchedulePageState extends State<SchedulePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          // limit schedules per day to 10
+          if (widget.damper.schedule?[selectedDayOfWeek]?.length == 10) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    "You can only have 10 schedules per day. Delete some schedules to add more."),
+              ),
+            );
+            return;
+          }
+
           var now = DateTime.now();
           var time = TimeOfDay(hour: now.hour, minute: now.minute);
           showTimePicker(
