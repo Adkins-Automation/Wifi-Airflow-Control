@@ -3,6 +3,7 @@
 #include <ArduinoBLE.h>
 #include <FlashStorage.h>
 #include <ArduinoHttpClient.h>
+#include <ArduinoJson.h>
 
 #define DATABASE_URL "iflow-fe711-default-rtdb.firebaseio.com"
 #define DATABASE_SECRET "Y9Fjdu4CvnlpcBMtpTGx13hj4aQ5eFAwm4cQWhZn"
@@ -17,9 +18,11 @@ String mac; // used as damper id
 String labelPath;
 String positionPath; // firebase path to position value of this damper
 String lastHeartbeatPath;
+String schedulePath;
 
 unsigned long initialUnixTime = 0;     // Unix timestamp from server
 unsigned long initialMillis = 0;       // millis() value when unixtime was retrieved
+unsigned long lastScheduleCheck = 0;
 
 // Define the maximum lengths for the strings (including null terminators)
 #define MAX_SSID_LENGTH 32
@@ -32,6 +35,19 @@ struct WifiCredentials {
   char password[MAX_PASSWORD_LENGTH];
   char userId[MAX_USERID_LENGTH];
   bool initialized;  // Flag to check if data has been written before
+};
+
+struct TimePosition {
+    int time;
+    int position;
+};
+
+#define MAX_SCHEDULES_PER_DAY 10  // Assuming a maximum of 10 schedule entries per day. Adjust as needed.
+
+struct DaySchedule {
+    int day;
+    TimePosition schedule[MAX_SCHEDULES_PER_DAY];
+    int scheduleCount;  // To track the number of entries in the schedule array.
 };
 
 WifiCredentials newCredentials;
@@ -58,6 +74,16 @@ void setup() {
 
   // Attempt to retrieve SSID, password, and user ID from flash storage
   WifiCredentials storedCredentials = flashStorage.read();
+
+  // for testing purposes only //
+  // userId = "ecnlzD6NLnbXqx47qcaeU2KgfDr2";
+  // ssid = "Zenfone 9_3070";
+  // password = "mme9h4xpeq9mtdw";
+  // ssid.toCharArray(storedCredentials.ssid, MAX_SSID_LENGTH);
+  // password.toCharArray(storedCredentials.password, MAX_PASSWORD_LENGTH);
+  // userId.toCharArray(storedCredentials.userId, MAX_USERID_LENGTH);
+  // storedCredentials.initialized = true;
+  // ... //
 
   if (!storedCredentials.initialized) {
     Serial.println("damper not initialized");
@@ -86,6 +112,8 @@ void setup() {
   positionPath = devicePath + "/position";
   lastHeartbeatPath = devicePath + "/lastHeartbeat";
   labelPath = devicePath + "/label";
+  schedulePath = devicePath + "/schedule";
+
 
   // Store received values in flash storage
   if (!storedCredentials.initialized) {
@@ -116,6 +144,12 @@ void loop() {
     }
     delay(2000); // Delay to prevent rapid Firebase requests. Adjust as needed.
     sendHeartbeat();
+
+    unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
+    if(unixtime - lastScheduleCheck > 60){
+      lastScheduleCheck = unixtime;
+      applySchedule();
+    }
   } else {
     // Handle error if needed
     Serial.println("Failed to retrieve position from Firebase: " + fbdo.errorReason());
@@ -224,6 +258,124 @@ void connectToFirebase() {
   Serial.println("Connecting to firebase");
   Firebase.begin(DATABASE_URL, DATABASE_SECRET, ssid.c_str(), password.c_str());
   Firebase.reconnectWiFi(true);
+}
+
+DaySchedule* getSchedule() {
+    static DaySchedule daySchedules[7];  // One for each day of the week
+
+    // Initialize daySchedules with default values
+    for (int i = 0; i < 7; i++) {
+      daySchedules[i].scheduleCount = 0;
+      for (int j = 0; j < MAX_SCHEDULES_PER_DAY; j++) {
+        daySchedules[i].schedule[j].time = -1;
+        daySchedules[i].schedule[j].position = -1;
+      }
+    }
+
+    if (Firebase.getJSON(fbdo, schedulePath)) {
+        String scheduleJson = fbdo.jsonData();
+        DynamicJsonDocument doc(2048); 
+        deserializeJson(doc, scheduleJson);
+
+        for (JsonPair kv : doc.as<JsonObject>()) {
+        int day = String(kv.key().c_str()).substring(1).toInt();
+        JsonObject dayScheduleJson = kv.value().as<JsonObject>();
+
+        DaySchedule currentDay;
+        currentDay.day = day;
+        currentDay.scheduleCount = 0;
+
+        for (JsonPair dayKv : dayScheduleJson) {
+          if (currentDay.scheduleCount < MAX_SCHEDULES_PER_DAY) {
+            TimePosition timePos;
+            timePos.time = String(dayKv.key().c_str()).toInt();
+            timePos.position = dayKv.value().as<int>();
+
+            currentDay.schedule[currentDay.scheduleCount] = timePos;
+            currentDay.scheduleCount++;
+          }
+        }
+        daySchedules[day] = currentDay;
+      }
+    } else {
+      Serial.println("Failed to retrieve schedule from Firebase: " + fbdo.errorReason());
+    }
+
+    return daySchedules;  // Return the array even if empty
+}
+
+void applySchedule(){
+  Serial.println("Getting schedule...");
+  DaySchedule* daySchedules = getSchedule();
+  printDaySchedules(daySchedules);
+
+  unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
+
+  // Convert current Unix time to day of the week and HHMM format.
+  int adjustedUnixTime = unixtime - (4 * 3600);  // subtract 4 hours
+  int currentDayOfWeek = ((adjustedUnixTime / 86400 + 4) % 7) - 1; // 1970-01-01 was a Thursday (day 4). -1 for index
+  int currentTime = ((adjustedUnixTime % 86400) / 3600) * 100 + ((adjustedUnixTime % 3600) / 60);
+
+
+  Serial.println("Current day of week: " + String(currentDayOfWeek));
+  Serial.println("Current time: " + String(currentTime));
+
+  DaySchedule* todayPtr = &daySchedules[currentDayOfWeek];
+
+  Serial.println("Printing todayPtr:");
+  Serial.println("Day: " + String(todayPtr->day));
+  Serial.println("ScheduleCount: " + String(todayPtr->scheduleCount));
+
+  for (int i = 0; i < todayPtr->scheduleCount; i++) {
+      Serial.print("Time: ");
+      Serial.print(todayPtr->schedule[i].time);
+      Serial.print(", Position: ");
+      Serial.println(todayPtr->schedule[i].position);
+  }
+
+  // Find the latest scheduled time that is before or equal to the current time.
+  int latestScheduledTime = -1;
+  int scheduledPosition = -1;
+
+  for (int i = 0; i < todayPtr->scheduleCount; i++) {
+    if (todayPtr->schedule[i].time <= currentTime && todayPtr->schedule[i].time > latestScheduledTime) {
+      latestScheduledTime = todayPtr->schedule[i].time;
+      scheduledPosition = todayPtr->schedule[i].position;
+    }
+  }
+
+  Serial.println("Latest scheduled time: " + String(latestScheduledTime));
+  Serial.println("Scheduled position: " + String(scheduledPosition));
+
+  if (scheduledPosition != -1 && scheduledPosition != position) {
+    myservo.write(scheduledPosition);
+    position = scheduledPosition;
+    setPosition();
+  }
+}
+
+void printDaySchedules(DaySchedule* daySchedules) {
+    Serial.println("Printing Day Schedules:");
+
+    // Loop through each day of the week
+    for (int i = 0; i < 7; i++) {
+        Serial.println("Day: " + String(i));
+        Serial.println("ScheduleCount: " + String(daySchedules[i].scheduleCount));
+
+        // For each day, loop through the scheduled times
+        for (int j = 0; j < daySchedules[i].scheduleCount; j++) {
+            if (daySchedules[i].schedule[j].time == -1) {
+              break; // exit the inner for loop
+            }
+
+            Serial.print("Time: ");
+            Serial.print(daySchedules[i].schedule[j].time);
+            Serial.print(", Position: ");
+            Serial.println(daySchedules[i].schedule[j].position);
+        }
+
+        Serial.println("----");
+    }
 }
 
 void setPosition() {
