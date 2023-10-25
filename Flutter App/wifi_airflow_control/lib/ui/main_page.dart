@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:i_flow/ui/schedule_page.dart';
 import 'package:i_flow/util/constants.dart';
 import 'package:i_flow/ui/sign_in_page.dart';
 import 'package:i_flow/ui/dialogs/sign_out_dialog.dart';
@@ -16,10 +17,10 @@ import 'new_damper_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
-  State<MainPage> createState() => _MainPageState();
+  MainPageState createState() => MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
   User? _user;
@@ -221,14 +222,34 @@ class _MainPageState extends State<MainPage> {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
         print(dampersData);
         setState(() {
-          _dampers = dampersData.map((id, data) => MapEntry(
+          _dampers = dampersData.map((id, data) {
+            Map<int, Map<int, int>>? scheduleData;
+
+            if (data['schedule'] is Map) {
+              var scheduleMap = data['schedule'] as Map;
+              scheduleData = scheduleMap.map(
+                (key, value) => MapEntry(
+                  int.parse(key
+                      .toString()
+                      .substring(1)), // Removing the prefix and parsing to int
+                  Map<int, int>.from(value.map((innerKey, innerValue) =>
+                      MapEntry(int.parse(innerKey.toString()),
+                          int.parse(innerValue.toString())))),
+                ),
+              );
+            }
+
+            return MapEntry(
               id,
               Damper(
                 id,
                 data['label'] ?? '',
                 data['position'] ?? 0,
                 data['lastHeartbeat'],
-              )));
+                scheduleData,
+              ),
+            );
+          });
         });
       }
     });
@@ -240,7 +261,9 @@ class _MainPageState extends State<MainPage> {
         damper.id: {
           'label': damper.label,
           'position': damper.currentPosition,
-          'lastHeartbeat': damper.lastHeartbeat
+          'lastHeartbeat': damper.lastHeartbeat,
+          'schedule':
+              damper.schedule?.map((key, value) => MapEntry("d$key", value))
         }
     };
     _db.child(_auth.currentUser!.uid).set(dampersData).then((_) {
@@ -329,6 +352,17 @@ class _MainPageState extends State<MainPage> {
                               color: isOnline ? Colors.green : Colors.red,
                               shape: BoxShape.circle,
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.schedule),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SchedulePage(damper),
+                                ),
+                              );
+                            },
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),

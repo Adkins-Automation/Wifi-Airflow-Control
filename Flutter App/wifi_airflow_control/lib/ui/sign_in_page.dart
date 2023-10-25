@@ -4,7 +4,7 @@ import 'package:i_flow/ui/register_page.dart';
 
 class SignInPage extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => SignInPageState();
+  SignInPageState createState() => SignInPageState();
 }
 
 class SignInPageState extends State<SignInPage> {

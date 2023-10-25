@@ -3,8 +3,10 @@ class Damper {
   String label;
   int currentPosition;
   int? lastHeartbeat;
+  Map<int, Map<int, int>>? schedule; // day of week, time, position
 
-  Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat);
+  Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat,
+      this.schedule);
 
   bool isOnline() {
     if (lastHeartbeat == null) {
