@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:i_flow/dto/damper.dart';
-import 'package:i_flow/ui/widgets/damper_slider.dart';
-import 'package:i_flow/util/constants.dart';
+import 'package:wifi_airflow_control/dto/damper.dart';
+import 'package:wifi_airflow_control/ui/widgets/damper_slider.dart';
+import 'package:wifi_airflow_control/util/constants.dart';
 
 class SchedulePage extends StatefulWidget {
   final Damper damper;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:i_flow/ui/qr_scan_page.dart';
+import 'package:wifi_airflow_control/ui/qr_scan_page.dart';
 
 class NewDamperPage extends StatefulWidget {
   @override

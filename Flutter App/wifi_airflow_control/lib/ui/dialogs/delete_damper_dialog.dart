@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:i_flow/dto/damper.dart';
+import 'package:wifi_airflow_control/dto/damper.dart';
 
 class DeleteDamperDialog extends StatelessWidget {
   final Function(String) _onConfirm;
