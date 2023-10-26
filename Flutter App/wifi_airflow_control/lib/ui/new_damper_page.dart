@@ -17,9 +17,9 @@ class NewDamperPageState extends State<NewDamperPage> {
 
   @override
   Widget build(BuildContext context) {
-    // damperId = "08b61f82f372";
-    // ssid = "Zenfone 9_3070";
-    // password = "mme9h4xpeq9mtdw";
+    damperId = "08b61f82f372";
+    ssid = "Zenfone 9_3070";
+    password = "mme9h4xpeq9mtdw";
     // ssid = "Adkins";
     // password = "chuck1229";
 

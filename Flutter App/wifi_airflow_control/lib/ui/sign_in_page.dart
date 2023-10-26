@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:i_flow/ui/register_page.dart';
 
 class SignInPage extends StatefulWidget {
@@ -29,6 +30,32 @@ class SignInPageState extends State<SignInPage> {
       // Handle sign-in errors
       print('Sign-in failed: $e');
       return e.toString().split('] ')[1];
+    }
+  }
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  Future<String> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleSignInAccount =
+          await _googleSignIn.signIn();
+      if (googleSignInAccount != null) {
+        final GoogleSignInAuthentication googleSignInAuthentication =
+            await googleSignInAccount.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleSignInAuthentication.accessToken,
+          idToken: googleSignInAuthentication.idToken,
+        );
+        final UserCredential authResult =
+            await _auth.signInWithCredential(credential);
+        _user = authResult.user;
+        return "pass";
+      } else {
+        return "Google Sign In Failed";
+      }
+    } catch (error) {
+      print(error);
+      return error.toString();
     }
   }
 
@@ -95,6 +122,20 @@ class SignInPageState extends State<SignInPage> {
                   });
                 },
                 child: Text('Register')),
+            ElevatedButton(
+              child: Text('Sign in with Google'),
+              onPressed: () async {
+                await _signInWithGoogle().then((response) {
+                  if (response == "pass") {
+                    Navigator.pop(context, _user);
+                  } else {
+                    setState(() {
+                      _error = response;
+                    });
+                  }
+                });
+              },
+            ),
           ],
         ),
       ),
