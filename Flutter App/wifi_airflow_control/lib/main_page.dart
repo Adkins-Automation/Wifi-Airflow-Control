@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:i_flow/auth_service.dart';
 import 'package:i_flow/constants.dart';
 import 'package:i_flow/sign_out_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -424,12 +425,17 @@ class _MainPageState extends State<MainPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (!success_) SizedBox(height: 16),
+                  if (!success_) Flexible(
+                    child:SizedBox(height: 16)),
                   if (!success_)
+                  Flexible(
+                    child:
                     Text("Invalid email or password",
                         style: TextStyle(
                           color: Colors.red,
-                        )),
+                        )
+                        )
+                        ),
                   SizedBox(height: 16),
                   TextFormField(
                     controller: emailController,
@@ -480,6 +486,12 @@ class _MainPageState extends State<MainPage> {
                       });
                     },
                     child: Text('Sign In'),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {AuthService().signInWithGoogle();},
+                    //make google image
+                    child: Text('Sign In With Google'),
                   ),
                 ],
               ),
