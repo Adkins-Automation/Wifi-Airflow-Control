@@ -296,7 +296,12 @@ class MainPageState extends State<MainPage> {
         title: const Text("iFlow"),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.account_circle),
+            icon: (_auth.currentUser == null ||
+                    _auth.currentUser?.photoURL == null)
+                ? Icon(Icons.account_circle)
+                : ClipOval(
+                    child: Image.network(_auth.currentUser!.photoURL!),
+                  ),
             onPressed: () async {
               if (_user == null) {
                 User? user = await _showSignInDialog(context);
