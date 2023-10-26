@@ -7,25 +7,22 @@ class NewDamperPage extends StatefulWidget {
 }
 
 class NewDamperPageState extends State<NewDamperPage> {
-  String? damperId;
-  String? ssid;
-  String password = ''; // optional
-
   final damperIdController = TextEditingController();
   final ssidController = TextEditingController();
   final passwordController = TextEditingController();
+  bool enableConnect = false;
 
   @override
   Widget build(BuildContext context) {
-    damperId = "08b61f82f372";
-    ssid = "Zenfone 9_3070";
-    password = "mme9h4xpeq9mtdw";
+    // damperId = "08b61f82f372";
+    // ssid = "Zenfone 9_3070";
+    // password = "mme9h4xpeq9mtdw";
     // ssid = "Adkins";
     // password = "chuck1229";
 
-    damperIdController.text = damperId ?? '';
-    ssidController.text = ssid ?? '';
-    passwordController.text = password;
+    // damperIdController.text = damperId ?? '';
+    // ssidController.text = ssid ?? '';
+    // passwordController.text = password;
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +35,10 @@ class NewDamperPageState extends State<NewDamperPage> {
             TextField(
               controller: damperIdController,
               onChanged: (value) {
-                damperId = value;
+                setState(() {
+                  enableConnect =
+                      value.isNotEmpty && ssidController.text.isNotEmpty;
+                });
               },
               decoration: InputDecoration(hintText: "Damper ID"),
             ),
@@ -46,16 +46,16 @@ class NewDamperPageState extends State<NewDamperPage> {
             TextField(
               controller: ssidController,
               onChanged: (value) {
-                ssid = value;
+                setState(() {
+                  enableConnect =
+                      value.isNotEmpty && damperIdController.text.isNotEmpty;
+                });
               },
               decoration: InputDecoration(hintText: "SSID"),
             ),
             SizedBox(height: 10),
             TextField(
               controller: passwordController,
-              onChanged: (value) {
-                password = value;
-              },
               decoration: InputDecoration(hintText: "Password"),
               obscureText: true,
             ),
@@ -70,21 +70,17 @@ class NewDamperPageState extends State<NewDamperPage> {
 
                   if (scannedResult != null) {
                     setState(() {
-                      damperId = scannedResult;
                       damperIdController.text = scannedResult;
                     });
                   }
                 }),
             ElevatedButton(
-              onPressed: (damperId != null &&
-                      damperId!.isNotEmpty &&
-                      ssid != null &&
-                      ssid!.isNotEmpty)
+              onPressed: (enableConnect)
                   ? () {
                       Navigator.pop(context, {
-                        'damperId': damperId,
-                        'ssid': ssid,
-                        'password': password,
+                        'damperId': damperIdController.text,
+                        'ssid': ssidController.text,
+                        'password': passwordController.text,
                       });
                     }
                   : null,
