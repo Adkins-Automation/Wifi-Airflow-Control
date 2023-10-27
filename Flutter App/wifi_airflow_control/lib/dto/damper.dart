@@ -15,17 +15,16 @@ class Damper {
 
     var tmpHb = lastHeartbeat! * 1000;
     var now = DateTime.now().millisecondsSinceEpoch;
-    var sixSeconds = 6 * 1000;
+    var sevenSeconds = 7 * 1000;
     print("lastHeartbeat: $tmpHb");
     print("          now: $now");
     print(
         "         diff: ${now - tmpHb} ms or ${(now - tmpHb) / 1000} seconds");
-    print(" diff < 6 sec: ${now - tmpHb <= sixSeconds}");
+    print(" diff < 6 sec: ${now - tmpHb <= sevenSeconds}");
     print("_____________________________");
 
-    return ((lastHeartbeat != null) &&
-        ((DateTime.now().millisecondsSinceEpoch - (lastHeartbeat! * 1000)) <=
-            sixSeconds));
+    return ((DateTime.now().millisecondsSinceEpoch - (lastHeartbeat! * 1000)) <=
+        sevenSeconds);
   }
 
   @override
