@@ -18,14 +18,12 @@ class SchedulePage extends StatefulWidget {
 class SchedulePageState extends State<SchedulePage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
-  //List<int> times = [];
   Damper? damper;
 
   void _updateDamperSchedule() {
     Map<String, Map<String, int>> scheduleForFirebase =
-        widget.damper.scheduleForFirebase();
+        damper!.scheduleForFirebase();
 
-    // Point to the specific damper's schedule in the database
     _db
         .child(_auth.currentUser!.uid)
         .child(widget.damper.id)
@@ -48,8 +46,6 @@ class SchedulePageState extends State<SchedulePage> {
       body: ListView.builder(
         itemCount: damper!.schedule.length,
         itemBuilder: (context, index) {
-          //int time = times[index];
-          //Schedule schedule = widget.damper.schedule[times[index]]!;
           print("days: ${damper!.schedule[times[index]]!.days}");
           int hour = damper!.schedule[times[index]]!.time ~/ 100;
           int minute = damper!.schedule[times[index]]!.time % 100;

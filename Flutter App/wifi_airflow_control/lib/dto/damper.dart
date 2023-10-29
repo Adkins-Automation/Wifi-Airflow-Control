@@ -12,7 +12,7 @@ class Damper {
 
   Map<String, Map<String, int>> scheduleForFirebase() {
     return schedule.map((time, schedule) {
-      return MapEntry(time.toString(),
+      return MapEntry("t$time",
           {'time': time, 'days': schedule.days, 'position': schedule.position});
     });
   }

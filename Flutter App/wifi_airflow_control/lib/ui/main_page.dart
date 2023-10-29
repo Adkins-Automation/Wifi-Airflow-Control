@@ -227,9 +227,8 @@ class MainPageState extends State<MainPage> {
             Map<int, Schedule> scheduleData = {};
             if (data['schedule'] != null) {
               data['schedule'].forEach((key, entry) {
-                int time = int.parse(key);
-                scheduleData[time] =
-                    Schedule(time, entry['days'], entry['position']);
+                scheduleData[entry['time']] =
+                    Schedule(entry['time'], entry['days'], entry['position']);
               });
             }
 
