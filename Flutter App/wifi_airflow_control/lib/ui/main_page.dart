@@ -5,12 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:wifi_airflow_control/dto/damper.dart';
+import 'package:wifi_airflow_control/dto/schedule.dart';
 import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
 import 'package:wifi_airflow_control/ui/sign_in_page.dart';
 import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../dto/damper.dart';
 import 'widgets/damper_slider.dart';
 import 'dialogs/delete_damper_dialog.dart';
 import 'new_damper_page.dart';
@@ -223,20 +224,13 @@ class MainPageState extends State<MainPage> {
         print(dampersData);
         setState(() {
           _dampers = dampersData.map((id, data) {
-            Map<int, Map<int, int>>? scheduleData;
-
-            if (data['schedule'] is Map) {
-              var scheduleMap = data['schedule'] as Map;
-              scheduleData = scheduleMap.map(
-                (key, value) => MapEntry(
-                  int.parse(key
-                      .toString()
-                      .substring(1)), // Removing the prefix and parsing to int
-                  Map<int, int>.from(value.map((innerKey, innerValue) =>
-                      MapEntry(int.parse(innerKey.toString()),
-                          int.parse(innerValue.toString())))),
-                ),
-              );
+            Map<int, Schedule> scheduleData = {};
+            if (data['schedule'] != null) {
+              data['schedule'].forEach((key, entry) {
+                int time = int.parse(key);
+                scheduleData[time] =
+                    Schedule(time, entry['days'], entry['position']);
+              });
             }
 
             return MapEntry(
@@ -262,8 +256,7 @@ class MainPageState extends State<MainPage> {
           'label': damper.label,
           'position': damper.currentPosition,
           'lastHeartbeat': damper.lastHeartbeat,
-          'schedule':
-              damper.schedule?.map((key, value) => MapEntry("d$key", value))
+          'schedule': damper.scheduleForFirebase(),
         }
     };
     _db.child(_auth.currentUser!.uid).set(dampersData).then((_) {

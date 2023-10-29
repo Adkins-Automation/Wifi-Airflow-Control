@@ -1,12 +1,21 @@
+import 'package:wifi_airflow_control/dto/schedule.dart';
+
 class Damper {
   String id;
   String label;
   int currentPosition;
   int? lastHeartbeat;
-  Map<int, Map<int, int>>? schedule; // day of week, time, position
+  Map<int, Schedule> schedule;
 
   Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat,
       this.schedule);
+
+  Map<String, Map<String, int>> scheduleForFirebase() {
+    return schedule.map((time, schedule) {
+      return MapEntry(time.toString(),
+          {'time': time, 'days': schedule.days, 'position': schedule.position});
+    });
+  }
 
   bool isOnline() {
     if (lastHeartbeat == null) {

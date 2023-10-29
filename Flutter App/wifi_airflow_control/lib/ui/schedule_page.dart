@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
+import 'package:wifi_airflow_control/dto/schedule.dart';
 import 'package:wifi_airflow_control/ui/widgets/damper_slider.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
 
@@ -17,127 +18,143 @@ class SchedulePage extends StatefulWidget {
 class SchedulePageState extends State<SchedulePage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
-  int selectedDayOfWeek = 0;
+  //List<int> times = [];
+  Damper? damper;
 
-  void _updateDamperSchedule(Damper damper) {
-    final scheduleData =
-        damper.schedule?.map((key, value) => MapEntry("d$key", value));
+  void _updateDamperSchedule() {
+    Map<String, Map<String, int>> scheduleForFirebase =
+        widget.damper.scheduleForFirebase();
 
     // Point to the specific damper's schedule in the database
     _db
         .child(_auth.currentUser!.uid)
-        .child(damper.id)
-        .child('schedule')
-        .set(scheduleData)
-        .then((_) {
+        .child(widget.damper.id)
+        .update({'schedule': scheduleForFirebase}).then((_) {
       print("Damper schedule updated successfully in Realtime Database");
     }).catchError((error) {
       print("Error updating damper schedule in Realtime Database: $error");
-      print(scheduleData);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    damper = damper ?? widget.damper;
+    List<int> times = damper!.schedule.keys.toList();
+    times.sort();
     return Scaffold(
       appBar: AppBar(
         title: Text("Schedule"),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(7, (index) {
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      selectedDayOfWeek = index;
-                    });
-                  },
-                  child: CircleAvatar(
-                    backgroundColor:
-                        selectedDayOfWeek == index ? Colors.blue : Colors.grey,
-                    child: Text(
-                      ["M", "T", "W", "T", "F", "S", "S"][index],
-                      style: TextStyle(
-                        color: selectedDayOfWeek == index
-                            ? Colors.white
-                            : Colors.black,
+      body: ListView.builder(
+        itemCount: damper!.schedule.length,
+        itemBuilder: (context, index) {
+          //int time = times[index];
+          //Schedule schedule = widget.damper.schedule[times[index]]!;
+          print("days: ${damper!.schedule[times[index]]!.days}");
+          int hour = damper!.schedule[times[index]]!.time ~/ 100;
+          int minute = damper!.schedule[times[index]]!.time % 100;
+
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => setState(() {
+                          damper!.schedule.remove(times[index]);
+                          //times.removeAt(index);
+                          _updateDamperSchedule();
+                        }),
+                      ),
+                    ],
                   ),
-                );
-              }),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount:
-                  widget.damper.schedule?[selectedDayOfWeek]?.keys.length ?? 0,
-              itemBuilder: (context, index) {
-                var sortedTimes =
-                    widget.damper.schedule?[selectedDayOfWeek]?.keys.toList();
-                sortedTimes?.sort();
-                var time = sortedTimes?[index];
-                var position =
-                    widget.damper.schedule?[selectedDayOfWeek]?[time];
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                                child: Center(
-                              child: Text(
-                                  "${(time! ~/ 100).toString().padLeft(2, '0')}:${(time % 100).toString().padLeft(2, '0')}"),
-                            )),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => setState(() {
-                                widget.damper.schedule?[selectedDayOfWeek]
-                                    ?.remove(time);
-                                _updateDamperSchedule(widget.damper);
-                              }),
-                            ),
-                          ],
-                        ),
-                        DamperSlider(
-                          initialValue: position!,
-                          onEnd: (value) {
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(8, (dayIndex) {
+                      print(
+                          "isDaySet: $dayIndex, ${damper!.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
+                      if (dayIndex == 7) {
+                        return IconButton(
+                          icon: Icon(damper!.schedule[times[index]]!
+                                  .isDaySet(Schedule.everyday)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank),
+                          onPressed: () {
                             setState(() {
-                              widget.damper.schedule?[selectedDayOfWeek]
-                                  ?[time] = value.toInt();
-                              _updateDamperSchedule(widget.damper);
+                              if (damper!.schedule[times[index]]!
+                                  .isDaySet(Schedule.everyday)) {
+                                damper!.schedule[times[index]]!
+                                    .unsetDay(Schedule.everyday);
+                              } else {
+                                damper!.schedule[times[index]]!
+                                    .setDay(Schedule.everyday);
+                              }
+
+                              _updateDamperSchedule();
                             });
                           },
-                        )
-                      ],
-                    ),
+                        );
+                      }
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (damper!.schedule[times[index]]!
+                                .isDaySet(Schedule.getDay(dayIndex))) {
+                              damper!.schedule[times[index]]!
+                                  .unsetDay(Schedule.getDay(dayIndex));
+                            } else {
+                              damper!.schedule[times[index]]!
+                                  .setDay(Schedule.getDay(dayIndex));
+                            }
+
+                            _updateDamperSchedule();
+                          });
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: damper!.schedule[times[index]]!
+                                  .isDaySet(Schedule.getDay(dayIndex))
+                              ? Colors.blue
+                              : Colors.grey,
+                          child: Text(
+                            ["M", "T", "W", "T", "F", "S", "S"][dayIndex],
+                            style: TextStyle(
+                              color: damper!.schedule[times[index]]!
+                                      .isDaySet(Schedule.getDay(dayIndex))
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
                   ),
-                );
-              },
+                  DamperSlider(
+                    initialValue: damper!.schedule[times[index]]!.position,
+                    onEnd: (value) {
+                      setState(() {
+                        damper!.schedule[times[index]]!.position =
+                            value.toInt();
+                        _updateDamperSchedule();
+                      });
+                    },
+                  )
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // limit schedules per day to 10
-          if (widget.damper.schedule?[selectedDayOfWeek]?.length == 10) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    "You can only have 10 schedules per day. Delete some schedules to add more."),
-              ),
-            );
-            return;
-          }
-
           var now = DateTime.now();
           var time = TimeOfDay(hour: now.hour, minute: now.minute);
           showTimePicker(
@@ -145,12 +162,15 @@ class SchedulePageState extends State<SchedulePage> {
             initialTime: time,
           ).then((value) {
             if (value != null) {
-              var time = value.hour * 100 + value.minute;
-              widget.damper.schedule ??= {};
-              widget.damper.schedule?[selectedDayOfWeek] ??= {};
+              var selectedTime = value.hour * 100 + value.minute;
+              if (times.contains(selectedTime)) {
+                return;
+              }
               setState(() {
-                widget.damper.schedule?[selectedDayOfWeek]?[time] = 0;
-                _updateDamperSchedule(widget.damper);
+                //times.add(selectedTime);
+                damper!.schedule[selectedTime] =
+                    Schedule(selectedTime, 0, damper!.currentPosition);
+                _updateDamperSchedule();
               });
             }
           });
