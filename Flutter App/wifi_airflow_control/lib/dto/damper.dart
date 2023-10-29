@@ -5,10 +5,11 @@ class Damper {
   String label;
   int currentPosition;
   int? lastHeartbeat;
+  bool pauseSchedule = false;
   Map<int, Schedule> schedule;
 
   Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat,
-      this.schedule);
+      this.pauseSchedule, this.schedule);
 
   Map<String, Map<String, int>> scheduleForFirebase() {
     return schedule.map((time, schedule) {

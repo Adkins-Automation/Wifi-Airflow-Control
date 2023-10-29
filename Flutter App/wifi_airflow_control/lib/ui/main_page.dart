@@ -165,7 +165,8 @@ class MainPageState extends State<MainPage> {
                 var data = event.snapshot.value as Map<dynamic, dynamic>;
                 if (data['label'] == null ||
                     data['position'] == null ||
-                    data['lastHeartbeat'] == null) {
+                    data['lastHeartbeat'] == null ||
+                    data['schedule'] == null) {
                   return;
                 }
                 _showSuccessMessage();
@@ -239,6 +240,7 @@ class MainPageState extends State<MainPage> {
                 data['label'] ?? '',
                 data['position'] ?? 0,
                 data['lastHeartbeat'],
+                data['pauseSchedule'] ?? false,
                 scheduleData,
               ),
             );
@@ -255,6 +257,7 @@ class MainPageState extends State<MainPage> {
           'label': damper.label,
           'position': damper.currentPosition,
           'lastHeartbeat': damper.lastHeartbeat,
+          'pauseSchedule': damper.pauseSchedule,
           'schedule': damper.scheduleForFirebase(),
         }
     };
