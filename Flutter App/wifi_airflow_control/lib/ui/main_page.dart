@@ -166,7 +166,7 @@ class MainPageState extends State<MainPage> {
                 if (data['label'] == null ||
                     data['position'] == null ||
                     data['lastHeartbeat'] == null ||
-                    data['schedule'] == null) {
+                    data['pauseSchedule'] == null) {
                   return;
                 }
                 _showSuccessMessage();

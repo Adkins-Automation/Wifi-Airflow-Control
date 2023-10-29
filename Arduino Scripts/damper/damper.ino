@@ -83,15 +83,15 @@ void setup() {
   WifiCredentials storedCredentials = flashStorage.read();
 
   // for testing purposes only //
-  userId = "ecnlzD6NLnbXqx47qcaeU2KgfDr2";
+  // userId = "ecnlzD6NLnbXqx47qcaeU2KgfDr2";
   // ssid = "Zenfone 9_3070";
   // password = "mme9h4xpeq9mtdw";
-  ssid = "Adkins";
-  password = "chuck1229";
-  ssid.toCharArray(storedCredentials.ssid, MAX_SSID_LENGTH);
-  password.toCharArray(storedCredentials.password, MAX_PASSWORD_LENGTH);
-  userId.toCharArray(storedCredentials.userId, MAX_USERID_LENGTH);
-  storedCredentials.initialized = true;
+  // ssid = "Adkins";
+  // password = "chuck1229";
+  // ssid.toCharArray(storedCredentials.ssid, MAX_SSID_LENGTH);
+  // password.toCharArray(storedCredentials.password, MAX_PASSWORD_LENGTH);
+  // userId.toCharArray(storedCredentials.userId, MAX_USERID_LENGTH);
+  // storedCredentials.initialized = true;
   // ... //
 
   if (!storedCredentials.initialized) {
@@ -129,6 +129,7 @@ void setup() {
   if (!storedCredentials.initialized) {
     setLabel();
     setPosition();
+    setPauseSchedule();
     getCurrentMillis();
     sendHeartbeat();
     Serial.println("Writing to flash storage");
@@ -174,6 +175,7 @@ void loop() {
       connectToFirebase();
       setPosition();
       setLabel();
+      setPauseSchedule();
       getCurrentMillis();
       sendHeartbeat();
       flashStorage.write(newCredentials);
