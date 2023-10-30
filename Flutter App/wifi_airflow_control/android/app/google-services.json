@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "772850286062",
+    "firebase_url": "https://iflow-fe711-default-rtdb.firebaseio.com",
     "project_id": "iflow-fe711",
     "storage_bucket": "iflow-fe711.appspot.com"
   },
@@ -14,7 +15,7 @@
       },
       "oauth_client": [
         {
-          "client_id": "772850286062-22cg2j9ah5cnetfhv3aink9a8pl75tb5.apps.googleusercontent.com",
+          "client_id": "772850286062-v6bupe4opa8dufivk63dkrgg90i3p20u.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -29,6 +30,13 @@
             {
               "client_id": "772850286062-22cg2j9ah5cnetfhv3aink9a8pl75tb5.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "772850286062-re1r9u49qs9fj0o7a3pigejqbq5djeus.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.wifiAirflowControl"
+              }
             }
           ]
         }
