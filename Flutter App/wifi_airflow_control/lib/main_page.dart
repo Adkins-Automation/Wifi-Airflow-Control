@@ -12,6 +12,7 @@ import 'damper.dart';
 import 'damper_slider.dart';
 import 'delete_damper_dialog.dart';
 import 'new_damper_dialog.dart';
+import 'register_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -487,6 +488,10 @@ class _MainPageState extends State<MainPage> {
                     },
                     child: Text('Sign In'),
                   ),
+                  ElevatedButton(onPressed: (){
+                    Navigator.push(context, 
+                    MaterialPageRoute(builder: ((context) => RegistrationPage())));
+                  }, child: Text('Register'))
                 ],
               ),
             ),
