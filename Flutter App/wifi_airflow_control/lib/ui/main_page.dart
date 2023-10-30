@@ -276,10 +276,17 @@ class MainPageState extends State<MainPage> {
     });
   }
 
-  void _updatePosition(String id, int? value) {
+  void _updatePosition(String id, int value) {
     setState(() {
-      _dampers[id]?.currentPosition = value!;
-      _uploadDampers();
+      _dampers[id]?.currentPosition = value;
+      _db
+          .child(_auth.currentUser!.uid)
+          .child(id)
+          .update({"position": value}).then((_) {
+        print("Dampers updated successfully in Realtime Database");
+      }).catchError((error) {
+        print("Error updating dampers in Realtime Database: $error");
+      });
     });
   }
 
