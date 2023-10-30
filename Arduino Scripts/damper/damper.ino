@@ -348,13 +348,13 @@ void applySchedule() {
   int scheduledPosition = -1;
 
   for (int i = 0; i < MAX_SCHEDULES; i++) {
-    Serial.println("Checking schedule at index: " + String(i));
-    Serial.println("Schedule time: " + String(fetchedSchedules[i].time));
-    Serial.println("Current time: " + String(currentTime));
-    Serial.println("Latest scheduled time: " + String(latestScheduledTime));
-    Serial.println("Schedule days bitmask: " + String(fetchedSchedules[i].days, BIN));
-    Serial.println("Current day bitmask: " + String(currentDayBitmask, BIN));
-    Serial.println("Bitwise AND result: " + String(fetchedSchedules[i].days & currentDayBitmask, BIN));
+    // Serial.println("Checking schedule at index: " + String(i));
+    // Serial.println("Schedule time: " + String(fetchedSchedules[i].time));
+    // Serial.println("Current time: " + String(currentTime));
+    // Serial.println("Latest scheduled time: " + String(latestScheduledTime));
+    // Serial.println("Schedule days bitmask: " + String(fetchedSchedules[i].days, BIN));
+    // Serial.println("Current day bitmask: " + String(currentDayBitmask, BIN));
+    // Serial.println("Bitwise AND result: " + String(fetchedSchedules[i].days & currentDayBitmask, BIN));
 
     if (fetchedSchedules[i].time <= currentTime && fetchedSchedules[i].time > latestScheduledTime && (fetchedSchedules[i].days & currentDayBitmask)) {
       latestScheduledTime = fetchedSchedules[i].time;
