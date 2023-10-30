@@ -7,10 +7,10 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
+import 'package:wifi_airflow_control/ui/profile_page.dart';
 import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
 import 'package:wifi_airflow_control/ui/sign_in_page.dart';
-import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'widgets/damper_slider.dart';
 import 'dialogs/delete_damper_dialog.dart';
@@ -24,7 +24,6 @@ class MainPage extends StatefulWidget {
 class MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
-  User? _user;
   Map<String, Damper> _dampers = {};
   FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _isConnecting = false;
@@ -32,32 +31,14 @@ class MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _initUser();
+
+    if (_auth.currentUser != null) {
+      _downloadDampers();
+    }
 
     Timer.periodic(Duration(minutes: 1), (timer) {
       _downloadDampers();
     });
-  }
-
-  void _initUser() {
-    _user = _auth.currentUser;
-    if (_user != null) {
-      _downloadDampers();
-    }
-  }
-
-  Future<void> _signOut() async {
-    // Perform sign-out logic using Firebase Authentication
-    try {
-      await _auth.signOut();
-      setState(() {
-        _user = null;
-        _dampers = {};
-      });
-    } catch (e) {
-      // Handle sign-out errors
-      print('Sign-out failed: $e');
-    }
   }
 
   Future<bool> _requestBluetoothScanPermission() async {
@@ -194,10 +175,9 @@ class MainPageState extends State<MainPage> {
 
   void _addDamper() async {
     if (_auth.currentUser == null) {
-      User? user = await _showSignInDialog(context);
+      await _showSignInPage(context);
       setState(() {
-        _user = user;
-        if (_user != null) _downloadDampers();
+        if (_auth.currentUser != null) _downloadDampers();
       });
       return;
     }
@@ -304,15 +284,18 @@ class MainPageState extends State<MainPage> {
                     child: Image.network(_auth.currentUser!.photoURL!),
                   ),
             onPressed: () async {
-              if (_user == null) {
-                User? user = await _showSignInDialog(context);
+              if (_auth.currentUser == null) {
+                await _showSignInPage(context);
                 setState(() {
-                  _user = user;
-                  if (_user != null) _downloadDampers();
+                  if (_auth.currentUser != null) _downloadDampers();
                 });
               } else {
-                // Prompt to confirm sign out
-                _showSignOutDialog(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(),
+                  ),
+                );
               }
             },
           )
@@ -410,16 +393,9 @@ class MainPageState extends State<MainPage> {
         builder: (BuildContext context) => deleteDamperDialog.build(context));
   }
 
-  Future<User?> _showSignInDialog(BuildContext context) async {
-    return await Navigator.push<User?>(
+  Future<void> _showSignInPage(BuildContext context) async {
+    await Navigator.push(
         context, MaterialPageRoute(builder: ((context) => SignInPage())));
-  }
-
-  void _showSignOutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => SignOutDialog(_signOut),
-    );
   }
 
   Future<Map<String, String?>?> _showNewDamperDialog(
