@@ -127,11 +127,8 @@ void setup() {
 
   // Store received values in flash storage
   if (!storedCredentials.initialized) {
-    setLabel();
-    setPosition();
-    setPauseSchedule();
     getCurrentMillis();
-    sendHeartbeat();
+    uploadDamper();
     Serial.println("Writing to flash storage");
     flashStorage.write(newCredentials);
   }else if (Firebase.getInt(fbdo, positionPath)) {
@@ -173,11 +170,9 @@ void loop() {
       initialize();
       connectToWiFi();
       connectToFirebase();
-      setPosition();
-      setLabel();
-      setPauseSchedule();
       getCurrentMillis();
-      sendHeartbeat();
+      uploadDamper();
+      Serial.println("Overwriting flash storage");
       flashStorage.write(newCredentials);
     }
   }
@@ -398,6 +393,25 @@ void sendHeartbeat() {
   Serial.println(unixtime);
 
   while(!Firebase.setInt(fbdo, lastHeartbeatPath, unixtime));
+}
+
+void uploadDamper() {
+    // Create a JSON object for the data
+    DynamicJsonDocument doc(1024);
+    doc["position"] = position;
+    doc["label"] = String("Damper ") + mac;
+    doc["pauseSchedule"] = pauseSchedule;
+    unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
+    doc["lastHeartbeat"] = unixtime;
+
+    // Convert the JSON object to a string
+    String data;
+    serializeJson(doc, data);
+  
+    Serial.println("Uploading combined data to Firebase: " + data);
+
+    // Make a single call to Firebase
+    while(!Firebase.setJSON(fbdo, devicePath, data));
 }
 
 void getCurrentMillis(){
