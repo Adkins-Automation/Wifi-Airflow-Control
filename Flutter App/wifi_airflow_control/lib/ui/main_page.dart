@@ -165,8 +165,7 @@ class MainPageState extends State<MainPage> {
                 var data = event.snapshot.value as Map<dynamic, dynamic>;
                 if (data['label'] == null ||
                     data['position'] == null ||
-                    data['lastHeartbeat'] == null ||
-                    data['pauseSchedule'] == null) {
+                    data['lastHeartbeat'] == null) {
                   return;
                 }
                 _showSuccessMessage();
@@ -335,9 +334,6 @@ class MainPageState extends State<MainPage> {
                             child: TextFormField(
                               key: UniqueKey(),
                               initialValue: damper.label,
-                              decoration: InputDecoration(
-                                labelText: 'Damper Name',
-                              ),
                               onChanged: (value) {
                                 damper.label = value;
                                 _uploadDampers();

@@ -57,20 +57,23 @@ class SchedulePageState extends State<SchedulePage> {
       ),
       body: Column(
         children: [
-          Row(
-            children: [
-              Text("Pause Schedule"),
-              Switch(
-                value: damper!.pauseSchedule,
-                onChanged: (value) {
-                  setState(() {
-                    damper!.pauseSchedule = value;
-                    _updateSchedulePause();
-                  });
-                },
-                activeColor: Colors.blue,
-              )
-            ],
+          Padding(
+            padding: const EdgeInsets.only(left: 18.0),
+            child: Row(
+              children: [
+                Text("Pause Schedule"),
+                Switch(
+                  value: damper!.pauseSchedule,
+                  onChanged: (value) {
+                    setState(() {
+                      damper!.pauseSchedule = value;
+                      _updateSchedulePause();
+                    });
+                  },
+                  activeColor: Colors.blue,
+                )
+              ],
+            ),
           ),
           Expanded(
               child: ListView.builder(
@@ -87,11 +90,15 @@ class SchedulePageState extends State<SchedulePage> {
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(
-                            "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
+                                style: TextStyle(fontSize: 42.0),
+                              ),
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
@@ -108,12 +115,10 @@ class SchedulePageState extends State<SchedulePage> {
                           print(
                               "isDaySet: $dayIndex, ${damper!.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
                           if (dayIndex == 7) {
-                            return IconButton(
-                              icon: Icon(damper!.schedule[times[index]]!
-                                      .isDaySet(Schedule.everyday)
-                                  ? Icons.check_box
-                                  : Icons.check_box_outline_blank),
-                              onPressed: () {
+                            return Switch(
+                              value: damper!.schedule[times[index]]!
+                                  .isDaySet(Schedule.everyday),
+                              onChanged: (active) {
                                 setState(() {
                                   if (damper!.schedule[times[index]]!
                                       .isDaySet(Schedule.everyday)) {
