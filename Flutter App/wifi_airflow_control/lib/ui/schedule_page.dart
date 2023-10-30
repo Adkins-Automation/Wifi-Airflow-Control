@@ -18,15 +18,21 @@ class SchedulePage extends StatefulWidget {
 class SchedulePageState extends State<SchedulePage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
-  Damper? damper;
+  late Damper damper;
+
+  @override
+  void initState() {
+    super.initState();
+    damper = widget.damper;
+  }
 
   void _updateDamperSchedule() {
     Map<String, Map<String, int>> scheduleForFirebase =
-        damper!.scheduleForFirebase();
+        damper.scheduleForFirebase();
 
     _db
         .child(_auth.currentUser!.uid)
-        .child(widget.damper.id)
+        .child(damper.id)
         .update({'schedule': scheduleForFirebase}).then((_) {
       print("Damper schedule updated successfully in Realtime Database");
     }).catchError((error) {
@@ -37,8 +43,8 @@ class SchedulePageState extends State<SchedulePage> {
   void _updateSchedulePause() {
     _db
         .child(_auth.currentUser!.uid)
-        .child(widget.damper.id)
-        .update({'pauseSchedule': damper!.pauseSchedule}).then((_) {
+        .child(damper.id)
+        .update({'pauseSchedule': damper.pauseSchedule}).then((_) {
       print("Damper schedule pause updated successfully in Realtime Database");
     }).catchError((error) {
       print(
@@ -48,8 +54,7 @@ class SchedulePageState extends State<SchedulePage> {
 
   @override
   Widget build(BuildContext context) {
-    damper = damper ?? widget.damper;
-    List<int> times = damper!.schedule.keys.toList();
+    List<int> times = damper.schedule.keys.toList();
     times.sort();
     return Scaffold(
       appBar: AppBar(
@@ -63,10 +68,10 @@ class SchedulePageState extends State<SchedulePage> {
               children: [
                 Text("Pause Schedule"),
                 Switch(
-                  value: damper!.pauseSchedule,
+                  value: damper.pauseSchedule,
                   onChanged: (value) {
                     setState(() {
-                      damper!.pauseSchedule = value;
+                      damper.pauseSchedule = value;
                       _updateSchedulePause();
                     });
                   },
@@ -77,11 +82,11 @@ class SchedulePageState extends State<SchedulePage> {
           ),
           Expanded(
               child: ListView.builder(
-            itemCount: damper!.schedule.length,
+            itemCount: damper.schedule.length,
             itemBuilder: (context, index) {
-              print("days: ${damper!.schedule[times[index]]!.days}");
-              int hour = damper!.schedule[times[index]]!.time ~/ 100;
-              int minute = damper!.schedule[times[index]]!.time % 100;
+              print("days: ${damper.schedule[times[index]]!.days}");
+              int hour = damper.schedule[times[index]]!.time ~/ 100;
+              int minute = damper.schedule[times[index]]!.time % 100;
 
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
@@ -103,7 +108,7 @@ class SchedulePageState extends State<SchedulePage> {
                           IconButton(
                             icon: const Icon(Icons.delete),
                             onPressed: () => setState(() {
-                              damper!.schedule.remove(times[index]);
+                              damper.schedule.remove(times[index]);
                               _updateDamperSchedule();
                             }),
                           ),
@@ -113,19 +118,19 @@ class SchedulePageState extends State<SchedulePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: List.generate(8, (dayIndex) {
                           print(
-                              "isDaySet: $dayIndex, ${damper!.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
+                              "isDaySet: $dayIndex, ${damper.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
                           if (dayIndex == 7) {
                             return Switch(
-                              value: damper!.schedule[times[index]]!
+                              value: damper.schedule[times[index]]!
                                   .isDaySet(Schedule.everyday),
                               onChanged: (active) {
                                 setState(() {
-                                  if (damper!.schedule[times[index]]!
+                                  if (damper.schedule[times[index]]!
                                       .isDaySet(Schedule.everyday)) {
-                                    damper!.schedule[times[index]]!
+                                    damper.schedule[times[index]]!
                                         .unsetDay(Schedule.everyday);
                                   } else {
-                                    damper!.schedule[times[index]]!
+                                    damper.schedule[times[index]]!
                                         .setDay(Schedule.everyday);
                                   }
 
@@ -137,12 +142,12 @@ class SchedulePageState extends State<SchedulePage> {
                           return InkWell(
                             onTap: () {
                               setState(() {
-                                if (damper!.schedule[times[index]]!
+                                if (damper.schedule[times[index]]!
                                     .isDaySet(Schedule.getDay(dayIndex))) {
-                                  damper!.schedule[times[index]]!
+                                  damper.schedule[times[index]]!
                                       .unsetDay(Schedule.getDay(dayIndex));
                                 } else {
-                                  damper!.schedule[times[index]]!
+                                  damper.schedule[times[index]]!
                                       .setDay(Schedule.getDay(dayIndex));
                                 }
 
@@ -150,14 +155,14 @@ class SchedulePageState extends State<SchedulePage> {
                               });
                             },
                             child: CircleAvatar(
-                              backgroundColor: damper!.schedule[times[index]]!
+                              backgroundColor: damper.schedule[times[index]]!
                                       .isDaySet(Schedule.getDay(dayIndex))
                                   ? Colors.blue
                                   : Colors.grey,
                               child: Text(
                                 ["M", "T", "W", "T", "F", "S", "S"][dayIndex],
                                 style: TextStyle(
-                                  color: damper!.schedule[times[index]]!
+                                  color: damper.schedule[times[index]]!
                                           .isDaySet(Schedule.getDay(dayIndex))
                                       ? Colors.white
                                       : Colors.black,
@@ -168,10 +173,10 @@ class SchedulePageState extends State<SchedulePage> {
                         }),
                       ),
                       DamperSlider(
-                        initialValue: damper!.schedule[times[index]]!.position,
+                        initialValue: damper.schedule[times[index]]!.position,
                         onEnd: (value) {
                           setState(() {
-                            damper!.schedule[times[index]]!.position =
+                            damper.schedule[times[index]]!.position =
                                 value.toInt();
                             _updateDamperSchedule();
                           });
@@ -199,9 +204,8 @@ class SchedulePageState extends State<SchedulePage> {
                 return;
               }
               setState(() {
-                //times.add(selectedTime);
-                damper!.schedule[selectedTime] =
-                    Schedule(selectedTime, 0, damper!.currentPosition);
+                damper.schedule[selectedTime] =
+                    Schedule(selectedTime, 0, damper.currentPosition);
                 _updateDamperSchedule();
               });
             }

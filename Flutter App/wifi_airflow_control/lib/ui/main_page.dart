@@ -7,6 +7,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
+import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 import 'package:wifi_airflow_control/ui/profile_page.dart';
 import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
@@ -197,7 +198,12 @@ class MainPageState extends State<MainPage> {
   }
 
   void _downloadDampers() {
-    if (_auth.currentUser == null) return;
+    if (_auth.currentUser == null) {
+      setState(() {
+        _dampers = {};
+      });
+      return;
+    }
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
@@ -290,12 +296,25 @@ class MainPageState extends State<MainPage> {
                   if (_auth.currentUser != null) _downloadDampers();
                 });
               } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfilePage(),
-                  ),
-                );
+                // show sign out dialog
+                showDialog(
+                    context: context,
+                    builder: (context) => SignOutDialog(() => () async {
+                          await _auth.signOut();
+                          setState(() {
+                            _dampers = {};
+                          });
+                        }));
+
+                // TODO: Check user sign out
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => ProfilePage(),
+                //   ),
+                // ).then((_) => setState(() {
+                //       _downloadDampers();
+                //     }));
               }
             },
           )

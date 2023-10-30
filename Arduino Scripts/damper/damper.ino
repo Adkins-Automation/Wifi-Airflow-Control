@@ -16,6 +16,7 @@ int position = 0; // Initial position
 bool pauseSchedule = false;
 
 String mac; // used as damper id
+String devicePath;
 String labelPath;
 String positionPath; // firebase path to position value of this damper
 String lastHeartbeatPath;
@@ -117,7 +118,7 @@ void setup() {
 
   myservo.attach(9);
   
-  String devicePath = userId + "/" + mac;
+  devicePath = userId + "/" + mac;
   positionPath = devicePath + "/position";
   lastHeartbeatPath = devicePath + "/lastHeartbeat";
   labelPath = devicePath + "/label";
