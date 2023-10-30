@@ -299,12 +299,7 @@ class MainPageState extends State<MainPage> {
                 // show sign out dialog
                 showDialog(
                     context: context,
-                    builder: (context) => SignOutDialog(() => () async {
-                          await _auth.signOut();
-                          setState(() {
-                            _dampers = {};
-                          });
-                        }));
+                    builder: (context) => SignOutDialog(_signOut));
 
                 // TODO: Check user sign out
                 // Navigator.push(
@@ -455,5 +450,18 @@ class MainPageState extends State<MainPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connection failed: $reason')),
     );
+  }
+
+  Future<void> _signOut() async {
+    // Perform sign-out logic using Firebase Authentication
+    try {
+      await _auth.signOut();
+      setState(() {
+        _dampers = {};
+      });
+    } catch (e) {
+      // Handle sign-out errors
+      print('Sign-out failed: $e');
+    }
   }
 }
