@@ -51,6 +51,7 @@ class MainPageState extends State<MainPage> {
     return statuses[Permission.bluetoothConnect]!.isGranted &&
         statuses[Permission.bluetoothScan]!.isGranted;
 
+    // TODO: handle denied permissions gracefully
     // if (statuses[Permission.bluetoothConnect]!.isGranted &&
     //     statuses[Permission.bluetoothScan]!.isGranted) {
     //   // Permission granted
@@ -70,6 +71,8 @@ class MainPageState extends State<MainPage> {
       String damperId, String ssid, String password, String userId) async {
     var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
+
+    // TODO: Check if bluetooth is enabled on phone here, if not, show message and return
 
     _showConnectingDialog();
 
@@ -115,6 +118,8 @@ class MainPageState extends State<MainPage> {
             await result.device.connect().catchError((error) {
               _showFailureMessage(error.toString());
             });
+
+            //TODO: Update dialog message here to 'Registering damper...'
 
             // Discover services after connecting to the device
             List<BluetoothService> services =
@@ -296,20 +301,20 @@ class MainPageState extends State<MainPage> {
                   if (_auth.currentUser != null) _downloadDampers();
                 });
               } else {
-                // show sign out dialog
-                showDialog(
-                    context: context,
-                    builder: (context) => SignOutDialog(_signOut));
+                // placeholder till sign out bug on profile page is fixed
+                // showDialog(
+                //     context: context,
+                //     builder: (context) => SignOutDialog(_signOut));
 
-                // TODO: Check user sign out
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => ProfilePage(),
-                //   ),
-                // ).then((_) => setState(() {
-                //       _downloadDampers();
-                //     }));
+                // TODO: fix sign out bug, main page state not set properly
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(),
+                  ),
+                ).then((_) => setState(() {
+                      _downloadDampers();
+                    }));
               }
             },
           )
@@ -421,6 +426,7 @@ class MainPageState extends State<MainPage> {
   }
 
   void _showConnectingDialog() {
+    // TODO: add cancel button, set dismissable to false
     _isConnecting = true;
     showDialog(
       context: context,

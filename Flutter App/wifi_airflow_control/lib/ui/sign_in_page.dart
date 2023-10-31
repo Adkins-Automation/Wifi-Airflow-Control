@@ -55,6 +55,7 @@ class SignInPageState extends State<SignInPage> {
       }
     } catch (error) {
       print(error);
+      // TODO: convert to useful errors to display to user
       return error.toString();
     }
   }

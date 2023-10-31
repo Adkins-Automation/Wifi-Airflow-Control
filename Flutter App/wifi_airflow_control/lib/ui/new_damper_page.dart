@@ -74,6 +74,7 @@ class NewDamperPageState extends State<NewDamperPage> {
                     });
                   }
                 }),
+            // TODO: add qr scanner for wifi creds
             ElevatedButton(
               onPressed: (enableConnect)
                   ? () {
