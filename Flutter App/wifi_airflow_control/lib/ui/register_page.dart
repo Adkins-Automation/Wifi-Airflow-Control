@@ -11,8 +11,6 @@ class RegisterPageState extends State<RegisterPage> {
   User? _user;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  String? email;
-  String? password;
   String? _error;
 
   Future<String> _register(String email, String password) async {
@@ -39,7 +37,7 @@ class RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       appBar: AppBar(title: Text("Register")),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             if (_error != null)
