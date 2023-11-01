@@ -68,10 +68,10 @@ class SchedulePageState extends State<SchedulePage> {
               children: [
                 Text("Pause Schedule"),
                 Switch(
-                  value: damper.pauseSchedule,
+                  value: damper.pauseSchedule == 1,
                   onChanged: (value) {
                     setState(() {
-                      damper.pauseSchedule = value;
+                      damper.pauseSchedule = value ? 1 : 0;
                       _updateSchedulePause();
                     });
                   },
@@ -117,8 +117,8 @@ class SchedulePageState extends State<SchedulePage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: List.generate(8, (dayIndex) {
-                          print(
-                              "isDaySet: $dayIndex, ${damper.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
+                          // print(
+                          //     "isDaySet: $dayIndex, ${damper.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
                           if (dayIndex == 7) {
                             return Switch(
                               value: damper.schedule[times[index]]!

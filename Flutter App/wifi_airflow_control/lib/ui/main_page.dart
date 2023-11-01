@@ -182,9 +182,7 @@ class MainPageState extends State<MainPage> {
   void _addDamper() async {
     if (_auth.currentUser == null) {
       await _showSignInPage(context);
-      setState(() {
-        if (_auth.currentUser != null) _downloadDampers();
-      });
+      _downloadDampers();
       return;
     }
     var result = await _showNewDamperDialog(context);
@@ -212,7 +210,7 @@ class MainPageState extends State<MainPage> {
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
-        print(dampersData);
+        print("downloaded dampers: $dampersData");
         setState(() {
           _dampers = dampersData.map((id, data) {
             Map<int, Schedule> scheduleData = {};
@@ -229,8 +227,8 @@ class MainPageState extends State<MainPage> {
                 id,
                 data['label'] ?? '',
                 data['position'] ?? 0,
-                data['lastHeartbeat'],
-                data['pauseSchedule'] ?? false,
+                data['lastHeartbeat'] ?? 0,
+                data['pauseSchedule'] ?? 0,
                 scheduleData,
               ),
             );
@@ -278,6 +276,34 @@ class MainPageState extends State<MainPage> {
       }).catchError((error) {
         print("Error updating dampers in Realtime Database: $error");
       });
+
+      if (_dampers[id]?.pauseSchedule == 0) {
+        // get unix time of next schedule, if none, return
+        var now = DateTime.now();
+        var nextSchedule = _dampers[id]?.schedule.values.firstWhere(
+            (schedule) =>
+                schedule.time > now.hour * 100 + now.minute &&
+                schedule.isDaySet(Schedule.getDay(now.weekday)),
+            orElse: () => Schedule(0, 0, 0));
+        if (nextSchedule?.time == 0) return;
+
+        // get unix time of next schedule
+        var nextScheduleTime = DateTime(now.year, now.month, now.day,
+                    nextSchedule!.time ~/ 100, nextSchedule.time % 100)
+                .millisecondsSinceEpoch ~/
+            1000;
+
+        // update pauseSchedule to next schedule time
+        _dampers[id]?.pauseSchedule = nextScheduleTime;
+        _db
+            .child(_auth.currentUser!.uid)
+            .child(id)
+            .update({"pauseSchedule": nextScheduleTime}).then((_) {
+          print("Dampers updated successfully in Realtime Database");
+        }).catchError((error) {
+          print("Error updating dampers in Realtime Database: $error");
+        });
+      }
     });
   }
 
@@ -297,9 +323,7 @@ class MainPageState extends State<MainPage> {
             onPressed: () async {
               if (_auth.currentUser == null) {
                 await _showSignInPage(context);
-                setState(() {
-                  if (_auth.currentUser != null) _downloadDampers();
-                });
+                _downloadDampers();
               } else {
                 // placeholder till sign out bug on profile page is fixed
                 // showDialog(
@@ -312,9 +336,9 @@ class MainPageState extends State<MainPage> {
                   MaterialPageRoute(
                     builder: (context) => ProfilePage(),
                   ),
-                ).then((_) => setState(() {
-                      _downloadDampers();
-                    }));
+                ).then((_) {
+                  _downloadDampers();
+                });
               }
             },
           )
@@ -327,7 +351,7 @@ class MainPageState extends State<MainPage> {
           child: ListView.builder(
             itemCount: _dampers.length,
             itemBuilder: (context, index) {
-              print("$index, ${_dampers.values.elementAt(index)}");
+              //print("$index, ${_dampers.values.elementAt(index)}");
               final damper = _dampers.values.elementAt(index);
               final isOnline = damper.isOnline();
               return Card(
