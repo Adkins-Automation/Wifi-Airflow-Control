@@ -13,7 +13,7 @@ FirebaseData fbdo;
 
 Servo myservo;
 int position = 0; // Initial position
-bool pauseSchedule = false;
+int pauseSchedule = 0;
 
 String mac; // used as damper id
 String devicePath;
@@ -307,9 +307,9 @@ Schedule* getSchedule() {
 void applySchedule() {
   Serial.println("Getting schedule...");
 
-  if(Firebase.getBool(fbdo, pauseSchedulePath)){
-    pauseSchedule = fbdo.boolData();
-    if(pauseSchedule){
+  if(Firebase.getInt(fbdo, pauseSchedulePath)){
+    pauseSchedule = fbdo.intData();
+    if(pauseSchedule == 1){
       Serial.println("Schedule paused");
       return;
     }
