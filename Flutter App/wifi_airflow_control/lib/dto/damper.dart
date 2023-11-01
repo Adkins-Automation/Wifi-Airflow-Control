@@ -1,3 +1,4 @@
+import 'package:wifi_airflow_control/dto/last_change.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
 
 class Damper {
@@ -7,9 +8,10 @@ class Damper {
   int lastHeartbeat;
   bool pauseSchedule;
   Map<int, Schedule> schedule;
+  LastChange? lastChange;
 
   Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat,
-      this.pauseSchedule, this.schedule);
+      this.pauseSchedule, this.schedule, this.lastChange);
 
   Map<String, Map<String, int>> scheduleForFirebase() {
     return schedule.map((time, schedule) {

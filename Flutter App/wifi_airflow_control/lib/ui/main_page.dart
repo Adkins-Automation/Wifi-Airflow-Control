@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
+import 'package:wifi_airflow_control/dto/last_change.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
 import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 import 'package:wifi_airflow_control/ui/profile_page.dart';
@@ -221,6 +222,14 @@ class MainPageState extends State<MainPage> {
               });
             }
 
+            LastChange? lastChange;
+            if (data['lastUpdate'] != null) {
+              lastChange = LastChange(
+                  data['lastUpdate']['time'],
+                  data['lastUpdate']['position'],
+                  data['lastUpdate']['scheduled']);
+            }
+
             return MapEntry(
               id,
               Damper(
@@ -230,6 +239,7 @@ class MainPageState extends State<MainPage> {
                 data['lastHeartbeat'] ?? 0,
                 data['pauseSchedule'] ?? false,
                 scheduleData,
+                lastChange,
               ),
             );
           });

@@ -40,6 +40,12 @@ struct WifiCredentials {
   bool initialized;  // Flag to check if data has been written before
 };
 
+struct LastChange {
+  int time;
+  int position;
+  bool scheduled;
+}
+
 struct Schedule {
     int time;
     int days;
