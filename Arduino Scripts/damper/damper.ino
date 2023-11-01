@@ -22,6 +22,7 @@ String positionPath; // firebase path to position value of this damper
 String lastHeartbeatPath;
 String schedulePath;
 String pauseSchedulePath;
+String lastChangePath;
 
 unsigned long initialUnixTime = 0;     // Unix timestamp from server
 unsigned long initialMillis = 0;       // millis() value when unixtime was retrieved
@@ -44,7 +45,9 @@ struct LastChange {
   int time;
   int position;
   bool scheduled;
-}
+};
+
+LastChange lastChange;
 
 struct Schedule {
     int time;
@@ -53,16 +56,6 @@ struct Schedule {
 };
 
 #define MAX_SCHEDULES 10  // Assuming a maximum of 10 schedule entries. Adjust as needed.
-
-// Bitwise values for each day
-static const int monday = 1; // 2^0
-static const int tuesday = 2; // 2^1
-static const int wednesday = 4; // 2^2
-static const int thursday = 8; // 2^3
-static const int friday = 16; // 2^4
-static const int saturday = 32; // 2^5
-static const int sunday = 64; // 2^6
-static const int everyday = 127; // 2^7 - 1
 
 WifiCredentials newCredentials;
 
@@ -130,7 +123,7 @@ void setup() {
   labelPath = devicePath + "/label";
   schedulePath = devicePath + "/schedule";
   pauseSchedulePath = devicePath + "/pauseSchedule";
-
+  lastChangePath = devicePath + "/lastChange";
 
   // Store received values in flash storage
   if (!storedCredentials.initialized) {
@@ -156,6 +149,10 @@ void loop() {
     if (newPosition != position) {
       myservo.write(newPosition);
       position = newPosition;
+      lastChange.time = getUnixtime();
+      lastChange.position = position;
+      lastChange.scheduled = false;
+      setLastChange();
     }
     delay(2000); // Delay to prevent rapid Firebase requests. Adjust as needed.
     sendHeartbeat();
@@ -373,6 +370,10 @@ void applySchedule() {
     myservo.write(scheduledPosition);
     position = scheduledPosition;
     setPosition();
+    lastChange.time = getUnixtime();
+    lastChange.position = position;
+    lastChange.scheduled = true;
+    setLastChange();
   }
 }
 
@@ -398,6 +399,20 @@ void sendHeartbeat() {
   Serial.println(unixtime);
 
   while(!Firebase.setInt(fbdo, lastHeartbeatPath, unixtime));
+}
+
+void setLastChange() {
+  DynamicJsonDocument doc(1024);
+  doc["time"] = lastChange.time;
+  doc["position"] = lastChange.position;
+  doc["scheduled"] = lastChange.scheduled;
+
+  String data;
+  serializeJson(doc, data);
+
+  Serial.println("Uploading lastChange: " + data);
+
+  while(!Firebase.setJSON(fbdo, lastChangePath, data));
 }
 
 void uploadDamper() {
