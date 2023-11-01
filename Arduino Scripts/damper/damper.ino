@@ -154,7 +154,7 @@ void loop() {
     delay(2000); // Delay to prevent rapid Firebase requests. Adjust as needed.
     sendHeartbeat();
 
-    unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
+    unsigned long unixtime = getUnixtime();
     if(unixtime - lastScheduleCheck > 60){
       lastScheduleCheck = unixtime;
       applySchedule();
@@ -327,10 +327,8 @@ void applySchedule() {
     Serial.println(fetchedSchedules[i].position);
   }
 
-  unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
-
   // Convert current Unix time to day of the week and HHMM format.
-  int adjustedUnixTime = unixtime - (4 * 3600);  // subtract 4 hours
+  int adjustedUnixTime = getUnixtime() - (4 * 3600);  // subtract 4 hours
   int currentDayOfWeek = ((adjustedUnixTime / 86400 + 4) % 7) - 1; // 1970-01-01 was a Thursday (day 4) - 1 for index.
   if(currentDayOfWeek == -1){
     currentDayOfWeek = 6; // Convert Sunday from -1 to 6
@@ -385,11 +383,11 @@ void setLabel() {
 
 void setPauseSchedule(){
   Serial.println("Uploading pauseSchedule: " + String(pauseSchedule));
-  while(!Firebase.setBool(fbdo, pauseSchedulePath, pauseSchedule));
+  while(!Firebase.setInt(fbdo, pauseSchedulePath, pauseSchedule));
 }
 
 void sendHeartbeat() {
-  unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
+  unsigned long unixtime = getUnixtime();
   Serial.print("lastHeartbeat: ");
   Serial.println(unixtime);
 
@@ -402,8 +400,7 @@ void uploadDamper() {
     doc["position"] = position;
     doc["label"] = String("Damper ") + mac;
     doc["pauseSchedule"] = pauseSchedule;
-    unsigned long unixtime = initialUnixTime + ((millis() - initialMillis) / 1000);
-    doc["lastHeartbeat"] = unixtime;
+    doc["lastHeartbeat"] = getUnixtime();
 
     // Convert the JSON object to a string
     String data;
@@ -466,6 +463,10 @@ void resetWifiModule(){
   WiFi.disconnect();
   delay(5000);
   WiFi.end();
+}
+
+unsigned long getUnixtime(){
+  return initialUnixTime + ((millis() - initialMillis) / 1000);
 }
 
 String* split(String data, char separator) {
