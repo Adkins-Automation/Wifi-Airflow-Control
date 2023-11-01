@@ -5,7 +5,7 @@ class Damper {
   String label;
   int currentPosition;
   int lastHeartbeat;
-  int pauseSchedule;
+  bool pauseSchedule;
   Map<int, Schedule> schedule;
 
   Damper(this.id, this.label, this.currentPosition, this.lastHeartbeat,

@@ -228,7 +228,7 @@ class MainPageState extends State<MainPage> {
                 data['label'] ?? '',
                 data['position'] ?? 0,
                 data['lastHeartbeat'] ?? 0,
-                data['pauseSchedule'] ?? 0,
+                data['pauseSchedule'] ?? false,
                 scheduleData,
               ),
             );
@@ -276,34 +276,6 @@ class MainPageState extends State<MainPage> {
       }).catchError((error) {
         print("Error updating dampers in Realtime Database: $error");
       });
-
-      if (_dampers[id]?.pauseSchedule == 0) {
-        // get unix time of next schedule, if none, return
-        var now = DateTime.now();
-        var nextSchedule = _dampers[id]?.schedule.values.firstWhere(
-            (schedule) =>
-                schedule.time > now.hour * 100 + now.minute &&
-                schedule.isDaySet(Schedule.getDay(now.weekday)),
-            orElse: () => Schedule(0, 0, 0));
-        if (nextSchedule?.time == 0) return;
-
-        // get unix time of next schedule
-        var nextScheduleTime = DateTime(now.year, now.month, now.day,
-                    nextSchedule!.time ~/ 100, nextSchedule.time % 100)
-                .millisecondsSinceEpoch ~/
-            1000;
-
-        // update pauseSchedule to next schedule time
-        _dampers[id]?.pauseSchedule = nextScheduleTime;
-        _db
-            .child(_auth.currentUser!.uid)
-            .child(id)
-            .update({"pauseSchedule": nextScheduleTime}).then((_) {
-          print("Dampers updated successfully in Realtime Database");
-        }).catchError((error) {
-          print("Error updating dampers in Realtime Database: $error");
-        });
-      }
     });
   }
 

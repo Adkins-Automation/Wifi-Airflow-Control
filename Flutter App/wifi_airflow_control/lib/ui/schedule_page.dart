@@ -68,10 +68,10 @@ class SchedulePageState extends State<SchedulePage> {
               children: [
                 Text("Pause Schedule"),
                 Switch(
-                  value: damper.pauseSchedule == 1,
+                  value: damper.pauseSchedule,
                   onChanged: (value) {
                     setState(() {
-                      damper.pauseSchedule = value ? 1 : 0;
+                      damper.pauseSchedule = value;
                       _updateSchedulePause();
                     });
                   },
