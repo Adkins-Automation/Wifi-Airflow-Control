@@ -391,6 +391,33 @@ class MainPageState extends State<MainPage> {
                               initialValue: damper.currentPosition,
                               onEnd: (endValue) {
                                 _updatePosition(damper.id, endValue);
+                                // wait 5 seconds then get lastChange
+                                Future.delayed(Duration(seconds: 5), () {
+                                  _db
+                                      .child(_auth.currentUser!.uid)
+                                      .child(damper.id)
+                                      .child('lastChange')
+                                      .get()
+                                      .then((snapshot) {
+                                    if (!snapshot.exists) {
+                                      _updatePosition(damper.id, 0);
+                                      return;
+                                    }
+                                    final lastChangeData =
+                                        snapshot.value as Map<dynamic, dynamic>;
+                                    damper.lastChange = LastChange(
+                                      lastChangeData['time'],
+                                      lastChangeData['position'],
+                                      lastChangeData['scheduled'],
+                                    );
+
+                                    if (damper.lastChange!.position ==
+                                        damper.currentPosition) return;
+
+                                    _updatePosition(
+                                        damper.id, damper.lastChange!.position);
+                                  });
+                                });
                               },
                             ),
                           ),
