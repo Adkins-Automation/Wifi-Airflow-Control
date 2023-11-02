@@ -5,23 +5,27 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:i_flow/constants.dart';
-import 'package:i_flow/sign_out_dialog.dart';
+import 'package:wifi_airflow_control/dto/damper.dart';
+import 'package:wifi_airflow_control/dto/last_change.dart';
+import 'package:wifi_airflow_control/dto/schedule.dart';
+import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
+import 'package:wifi_airflow_control/ui/profile_page.dart';
+import 'package:wifi_airflow_control/ui/schedule_page.dart';
+import 'package:wifi_airflow_control/util/constants.dart';
+import 'package:wifi_airflow_control/ui/sign_in_page.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'damper.dart';
-import 'damper_slider.dart';
-import 'delete_damper_dialog.dart';
-import 'new_damper_dialog.dart';
+import 'widgets/damper_slider.dart';
+import 'dialogs/delete_damper_dialog.dart';
+import 'new_damper_page.dart';
 
 class MainPage extends StatefulWidget {
   @override
-  State<MainPage> createState() => _MainPageState();
+  MainPageState createState() => MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class MainPageState extends State<MainPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
   final _db = FirebaseDatabase.instance.refFromURL(firebaseUrl);
-  User? _user;
   Map<String, Damper> _dampers = {};
   FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _isConnecting = false;
@@ -29,73 +33,14 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _initUser();
+
+    if (_auth.currentUser != null) {
+      _downloadDampers();
+    }
 
     Timer.periodic(Duration(minutes: 1), (timer) {
       _downloadDampers();
     });
-  }
-
-  void _initUser() {
-    _user = _auth.currentUser;
-    if (_user != null) {
-      _downloadDampers();
-    }
-  }
-
-  Future<String> _signIn(String email, String password) async {
-    // Perform sign-in logic using Firebase Authentication
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      setState(() {
-        _user = userCredential.user;
-      });
-      return "pass";
-    } catch (e) {
-      // Handle sign-in errors
-      print('Sign-in failed: $e');
-      if (e.toString().startsWith("[firebase_auth/user-not-found]")) {
-        return "user-not-found";
-      }
-
-      return "fail";
-    }
-  }
-
-  Future<bool> _register(String email, String password) async {
-    // Perform registration logic using Firebase Authentication
-    try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      setState(() {
-        _user = userCredential.user;
-      });
-      return true;
-    } catch (e) {
-      // Handle registration errors
-      print('Registration failed: $e');
-      return false;
-    }
-  }
-
-  Future<void> _signOut() async {
-    // Perform sign-out logic using Firebase Authentication
-    try {
-      await _auth.signOut();
-      setState(() {
-        _user = null;
-        _dampers = {};
-      });
-    } catch (e) {
-      // Handle sign-out errors
-      print('Sign-out failed: $e');
-    }
   }
 
   Future<bool> _requestBluetoothScanPermission() async {
@@ -107,6 +52,7 @@ class _MainPageState extends State<MainPage> {
     return statuses[Permission.bluetoothConnect]!.isGranted &&
         statuses[Permission.bluetoothScan]!.isGranted;
 
+    // TODO: handle denied permissions gracefully
     // if (statuses[Permission.bluetoothConnect]!.isGranted &&
     //     statuses[Permission.bluetoothScan]!.isGranted) {
     //   // Permission granted
@@ -126,6 +72,8 @@ class _MainPageState extends State<MainPage> {
       String damperId, String ssid, String password, String userId) async {
     var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
+
+    // TODO: Check if bluetooth is enabled on phone here, if not, show message and return
 
     _showConnectingDialog();
 
@@ -171,6 +119,8 @@ class _MainPageState extends State<MainPage> {
             await result.device.connect().catchError((error) {
               _showFailureMessage(error.toString());
             });
+
+            //TODO: Update dialog message here to 'Registering damper...'
 
             // Discover services after connecting to the device
             List<BluetoothService> services =
@@ -231,8 +181,9 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _addDamper() async {
-    if (_user == null) {
-      _showSignInDialog(context);
+    if (_auth.currentUser == null) {
+      await _showSignInPage(context);
+      _downloadDampers();
       return;
     }
     var result = await _showNewDamperDialog(context);
@@ -240,25 +191,58 @@ class _MainPageState extends State<MainPage> {
     String? ssid = result?['ssid'];
     String? password = result?['password'];
 
-    if (damperId != null && damperId.isNotEmpty) {
-      _connectToDamper(damperId, ssid!, password!, _auth.currentUser!.uid);
+    if (damperId != null &&
+        damperId.isNotEmpty &&
+        ssid != null &&
+        ssid.isNotEmpty &&
+        password != null &&
+        password.isNotEmpty) {
+      _connectToDamper(damperId, ssid, password, _auth.currentUser!.uid);
     }
   }
 
   void _downloadDampers() {
+    if (_auth.currentUser == null) {
+      setState(() {
+        _dampers = {};
+      });
+      return;
+    }
     _db.child(_auth.currentUser!.uid).get().then((snapshot) {
       if (snapshot.exists) {
         final dampersData = snapshot.value as Map<dynamic, dynamic>;
-        print(dampersData);
+        print("downloaded dampers: $dampersData");
         setState(() {
-          _dampers = dampersData.map((id, data) => MapEntry(
+          _dampers = dampersData.map((id, data) {
+            Map<int, Schedule> scheduleData = {};
+            if (data['schedule'] != null) {
+              data['schedule'].forEach((key, entry) {
+                scheduleData[entry['time']] =
+                    Schedule(entry['time'], entry['days'], entry['position']);
+              });
+            }
+
+            LastChange? lastChange;
+            if (data['lastUpdate'] != null) {
+              lastChange = LastChange(
+                  data['lastUpdate']['time'],
+                  data['lastUpdate']['position'],
+                  data['lastUpdate']['scheduled']);
+            }
+
+            return MapEntry(
               id,
               Damper(
                 id,
                 data['label'] ?? '',
                 data['position'] ?? 0,
-                data['lastHeartbeat'],
-              )));
+                data['lastHeartbeat'] ?? 0,
+                data['pauseSchedule'] ?? false,
+                scheduleData,
+                lastChange,
+              ),
+            );
+          });
         });
       }
     });
@@ -270,7 +254,9 @@ class _MainPageState extends State<MainPage> {
         damper.id: {
           'label': damper.label,
           'position': damper.currentPosition,
-          'lastHeartbeat': damper.lastHeartbeat
+          'lastHeartbeat': damper.lastHeartbeat,
+          'pauseSchedule': damper.pauseSchedule,
+          'schedule': damper.scheduleForFirebase(),
         }
     };
     _db.child(_auth.currentUser!.uid).set(dampersData).then((_) {
@@ -289,10 +275,17 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void _updatePosition(String id, int? value) {
+  void _updatePosition(String id, int value) {
     setState(() {
-      _dampers[id]?.currentPosition = value!;
-      _uploadDampers();
+      _dampers[id]?.currentPosition = value;
+      _db
+          .child(_auth.currentUser!.uid)
+          .child(id)
+          .update({"position": value}).then((_) {
+        print("Dampers updated successfully in Realtime Database");
+      }).catchError((error) {
+        print("Error updating dampers in Realtime Database: $error");
+      });
     });
   }
 
@@ -303,13 +296,31 @@ class _MainPageState extends State<MainPage> {
         title: const Text("iFlow"),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.account_circle),
-            onPressed: () {
-              if (_user == null) {
-                _showSignInDialog(context);
+            icon: (_auth.currentUser == null ||
+                    _auth.currentUser?.photoURL == null)
+                ? Icon(Icons.account_circle)
+                : ClipOval(
+                    child: Image.network(_auth.currentUser!.photoURL!),
+                  ),
+            onPressed: () async {
+              if (_auth.currentUser == null) {
+                await _showSignInPage(context);
+                _downloadDampers();
               } else {
-                // Prompt to confirm sign out
-                _showSignOutDialog(context);
+                // placeholder till sign out bug on profile page is fixed
+                // showDialog(
+                //     context: context,
+                //     builder: (context) => SignOutDialog(_signOut));
+
+                // TODO: fix sign out bug, main page state not set properly
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(),
+                  ),
+                ).then((_) {
+                  _downloadDampers();
+                });
               }
             },
           )
@@ -322,8 +333,9 @@ class _MainPageState extends State<MainPage> {
           child: ListView.builder(
             itemCount: _dampers.length,
             itemBuilder: (context, index) {
-              print("$index, ${_dampers.values.elementAt(index)}");
+              //print("$index, ${_dampers.values.elementAt(index)}");
               final damper = _dampers.values.elementAt(index);
+              final isOnline = damper.isOnline();
               return Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -337,24 +349,31 @@ class _MainPageState extends State<MainPage> {
                             child: TextFormField(
                               key: UniqueKey(),
                               initialValue: damper.label,
-                              decoration: InputDecoration(
-                                labelText: 'Damper Name',
-                              ),
                               onChanged: (value) {
                                 damper.label = value;
                                 _uploadDampers();
                               },
                             ),
                           ),
-                          Text(damper.isOnline() ? "Online" : "Offline"),
+                          Text(isOnline ? "Online" : "Offline"),
                           Container(
                             width: 10,
                             height: 10,
                             decoration: BoxDecoration(
-                              color:
-                                  damper.isOnline() ? Colors.green : Colors.red,
+                              color: isOnline ? Colors.green : Colors.red,
                               shape: BoxShape.circle,
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.schedule),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SchedulePage(damper),
+                                ),
+                              );
+                            },
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
@@ -399,112 +418,21 @@ class _MainPageState extends State<MainPage> {
         builder: (BuildContext context) => deleteDamperDialog.build(context));
   }
 
-  void _showSignInDialog(BuildContext context) {
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    final scaffold = ScaffoldMessenger.of(context);
-
-    // Show sign-in/register options
-    showDialog(
-      context: context,
-      builder: (context) {
-        bool success_ = true;
-        return StatefulBuilder(builder: (context, setState) {
-          return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (!success_) SizedBox(height: 16),
-                  if (!success_)
-                    Text("Invalid email or password",
-                        style: TextStyle(
-                          color: Colors.red,
-                        )),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Perform sign-in logic
-                      _signIn(
-                        emailController.text.trim(),
-                        passwordController.text.trim(),
-                      ).then((response) {
-                        if (response == "pass") {
-                          scaffold.showSnackBar(
-                              SnackBar(content: Text("Signed In")));
-                          _downloadDampers();
-                          Navigator.pop(context);
-                        } else if (response == "fail") {
-                          setState(() {
-                            success_ = false;
-                          });
-                        } else if (response == "user-not-found") {
-                          _register(emailController.text.trim(),
-                                  passwordController.text.trim())
-                              .then((success) {
-                            if (success) {
-                              scaffold.showSnackBar(SnackBar(
-                                  content: Text("Account registered")));
-                              Navigator.pop(context);
-                            } else {
-                              setState(() {
-                                success_ = false;
-                              });
-                            }
-                          });
-                        }
-                      });
-                    },
-                    child: Text('Sign In'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-      },
-    );
-  }
-
-  void _showSignOutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => SignOutDialog(_signOut),
-    );
+  Future<void> _showSignInPage(BuildContext context) async {
+    await Navigator.push(
+        context, MaterialPageRoute(builder: ((context) => SignInPage())));
   }
 
   Future<Map<String, String?>?> _showNewDamperDialog(
       BuildContext context) async {
-    return showDialog<Map<String, String?>>(
-      context: context,
-      builder: (BuildContext context) => NewDamperDialog(),
+    return await Navigator.push<Map<String, String?>>(
+      context,
+      MaterialPageRoute(builder: (BuildContext context) => NewDamperPage()),
     );
   }
 
   void _showConnectingDialog() {
+    // TODO: add cancel button, set dismissable to false
     _isConnecting = true;
     showDialog(
       context: context,
@@ -534,5 +462,18 @@ class _MainPageState extends State<MainPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connection failed: $reason')),
     );
+  }
+
+  Future<void> _signOut() async {
+    // Perform sign-out logic using Firebase Authentication
+    try {
+      await _auth.signOut();
+      setState(() {
+        _dampers = {};
+      });
+    } catch (e) {
+      // Handle sign-out errors
+      print('Sign-out failed: $e');
+    }
   }
 }
