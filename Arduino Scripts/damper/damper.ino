@@ -149,10 +149,7 @@ void loop() {
     if (newPosition != position) {
       myservo.write(newPosition);
       position = newPosition;
-      lastChange.time = getUnixtime();
-      lastChange.position = position;
-      lastChange.scheduled = false;
-      setLastChange();
+      setLastChange(false);
     }
     delay(2000); // Delay to prevent rapid Firebase requests. Adjust as needed.
     sendHeartbeat();
@@ -322,6 +319,7 @@ void applySchedule() {
 
   // Print fetched schedules for debugging purposes
   for (int i = 0; i < MAX_SCHEDULES; i++) {
+    if(fetchedSchedules[i].time < 0) continue;
     Serial.print("Time: ");
     Serial.print(fetchedSchedules[i].time);
     Serial.print(", Days: ");
@@ -331,12 +329,12 @@ void applySchedule() {
   }
 
   // Convert current Unix time to day of the week and HHMM format.
-  int adjustedUnixTime = getUnixtime() - (4 * 3600);  // subtract 4 hours
-  int currentDayOfWeek = ((adjustedUnixTime / 86400 + 4) % 7) - 1; // 1970-01-01 was a Thursday (day 4) - 1 for index.
+  unsigned long unixtime = getUnixtime() - (4 * 3600);  // subtract 4 hours; TODO: get time zone
+  int currentDayOfWeek = ((unixtime / 86400 + 4) % 7) - 1; // 1970-01-01 was a Thursday (day 4) - 1 for index.
   if(currentDayOfWeek == -1){
     currentDayOfWeek = 6; // Convert Sunday from -1 to 6
   }
-  int currentTime = ((adjustedUnixTime % 86400) / 3600) * 100 + ((adjustedUnixTime % 3600) / 60);
+  int currentTime = toTimeOfDay(unixtime);
 
   Serial.println("Current day of week: " + String(currentDayOfWeek));
   Serial.println("Current time: " + String(currentTime));
@@ -366,14 +364,24 @@ void applySchedule() {
   Serial.println("Latest scheduled time: " + String(latestScheduledTime));
   Serial.println("Scheduled position: " + String(scheduledPosition));
 
+  unsigned long lastChangeTime = lastChange.time - (4 * 3600);  // subtract 4 hours; TODO: get time zone
+  bool isLastChangeToday = isSameDay(lastChangeTime, unixtime);
+  int lastChangeTimeOfDay = toTimeOfDay(lastChangeTime);
+
+  Serial.println("Last change time: " + String(lastChange.time) + ", position: " + String(lastChange.position) + ", scheduled: " + String(lastChange.scheduled));
+  Serial.println("Last change was today: " + String(isLastChangeToday));
+  Serial.println("Last change time of day: " + String(lastChangeTimeOfDay));
+
+  if (latestScheduledTime <= lastChangeTimeOfDay && isLastChangeToday) {
+    Serial.println("A change has already occured since the last schedule time");
+    return;
+  }
+
   if (scheduledPosition != -1 && scheduledPosition != position) {
     myservo.write(scheduledPosition);
     position = scheduledPosition;
     setPosition();
-    lastChange.time = getUnixtime();
-    lastChange.position = position;
-    lastChange.scheduled = true;
-    setLastChange();
+    setLastChange(true);
   }
 }
 
@@ -401,7 +409,11 @@ void sendHeartbeat() {
   while(!Firebase.setInt(fbdo, lastHeartbeatPath, unixtime));
 }
 
-void setLastChange() {
+void setLastChange(bool scheduled) {
+  lastChange.time = getUnixtime();
+  lastChange.position = position;
+  lastChange.scheduled = scheduled;
+
   DynamicJsonDocument doc(1024);
   doc["time"] = lastChange.time;
   doc["position"] = lastChange.position;
@@ -488,6 +500,30 @@ void resetWifiModule(){
 
 unsigned long getUnixtime(){
   return initialUnixTime + ((millis() - initialMillis) / 1000);
+}
+
+int toTimeOfDay(unsigned long unixtime){
+
+  // Calculate the time of day
+  int secondsInDay = unixtime % 86400;
+  int hour = secondsInDay / 3600;
+  int minute = (secondsInDay % 3600) / 60;
+
+  // Convert to HHMM format
+  int timeOfDayHHMM = hour * 100 + minute;
+
+  return timeOfDayHHMM;
+}
+
+bool isSameDay(int unixtime1, int unixtime2) {
+  const int secondsPerDay = 86400;
+
+  // Calculate the number of days since the Unix epoch for each timestamp
+  int day1 = unixtime1 / secondsPerDay;
+  int day2 = unixtime2 / secondsPerDay;
+
+  // If the day numbers are equal, the timestamps are from the same day
+  return day1 == day2;
 }
 
 String* split(String data, char separator) {
