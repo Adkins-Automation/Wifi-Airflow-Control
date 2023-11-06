@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/ui/qr_scan_page.dart';
 
 class NewDamperPage extends StatefulWidget {
@@ -14,16 +15,6 @@ class NewDamperPageState extends State<NewDamperPage> {
 
   @override
   Widget build(BuildContext context) {
-    // damperId = "08b61f82f372";
-    // ssid = "Zenfone 9_3070";
-    // password = "mme9h4xpeq9mtdw";
-    // ssid = "Adkins";
-    // password = "chuck1229";
-
-    // damperIdController.text = damperId ?? '';
-    // ssidController.text = ssid ?? '';
-    // passwordController.text = password;
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Enter Details"),
@@ -78,10 +69,20 @@ class NewDamperPageState extends State<NewDamperPage> {
             ElevatedButton(
               onPressed: (enableConnect)
                   ? () {
-                      Navigator.pop(context, {
-                        'damperId': damperIdController.text,
-                        'ssid': ssidController.text,
-                        'password': passwordController.text,
+                      FlutterBlue.instance.isOn.then((isOn) {
+                        if (isOn) {
+                          Navigator.pop(context, {
+                            'damperId': damperIdController.text,
+                            'ssid': ssidController.text,
+                            'password': passwordController.text,
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'Please enable Bluetooth on your phone')),
+                          );
+                        }
                       });
                     }
                   : null,

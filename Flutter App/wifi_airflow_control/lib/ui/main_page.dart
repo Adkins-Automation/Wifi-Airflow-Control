@@ -73,8 +73,6 @@ class MainPageState extends State<MainPage> {
     var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
 
-    // TODO: Check if bluetooth is enabled on phone here, if not, show message and return
-
     _showConnectingDialog();
 
     flutterBlue.startScan(
