@@ -510,7 +510,7 @@ class MainPageState extends State<MainPage> {
         );
       },
       barrierDismissible: false,
-    ).then((value) => _isConnecting = false);
+    ).then((_) => _isConnecting = false);
   }
 
   void _showSuccessMessage() {
