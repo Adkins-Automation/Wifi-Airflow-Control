@@ -11,9 +11,11 @@ class RegisterPageState extends State<RegisterPage> {
   User? _user;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final nameController = TextEditingController();
   String? _error;
 
-  Future<String> _register(String email, String password) async {
+  Future<String> _register(
+      {required String email, required String password, String? name}) async {
     // Perform registration logic using Firebase Authentication
     try {
       UserCredential userCredential =
@@ -21,6 +23,9 @@ class RegisterPageState extends State<RegisterPage> {
         email: email,
         password: password,
       );
+      if (name != null) {
+        await userCredential.user?.updateDisplayName(name);
+      }
       setState(() {
         _user = userCredential.user;
       });
@@ -47,6 +52,13 @@ class RegisterPageState extends State<RegisterPage> {
                   )),
             SizedBox(height: 16),
             TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Name (optional)',
+              ),
+            ),
+            SizedBox(height: 16),
+            TextFormField(
               controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
@@ -63,8 +75,10 @@ class RegisterPageState extends State<RegisterPage> {
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                _register(emailController.text.trim(),
-                        passwordController.text.trim())
+                _register(
+                        email: emailController.text.trim(),
+                        password: passwordController.text.trim(),
+                        name: nameController.text.trim())
                     .then((response) {
                   if (response == 'pass') {
                     ScaffoldMessenger.of(context).showSnackBar(
