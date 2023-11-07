@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
+import 'package:wifi_airflow_control/ui/dialogs/text_prompt_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
+  final textStyle = TextStyle(fontSize: 20.0);
   @override
   ProfilePageState createState() => ProfilePageState();
 }
@@ -13,20 +15,12 @@ class ProfilePageState extends State<ProfilePage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   User? currentUser;
 
-  final _displayNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneNumberController = TextEditingController();
-  final _photoUrlController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     currentUser = _auth.currentUser;
-    _displayNameController.text = currentUser?.displayName ?? '';
-    _emailController.text = currentUser?.email ?? '';
-    _phoneNumberController.text = currentUser?.phoneNumber ?? '';
-    _photoUrlController.text = currentUser?.photoURL ?? '';
   }
 
   @override
@@ -46,36 +40,19 @@ class ProfilePageState extends State<ProfilePage> {
                 onPressed: _updatePhotoUrl,
                 child: Text('Update Photo'),
               ),
-              TextField(
-                controller: _displayNameController,
-                decoration: InputDecoration(
-                  labelText: 'Display Name',
-                ),
-              ),
+              SizedBox(height: 16),
+              Text(currentUser?.displayName ?? '', style: widget.textStyle),
               ElevatedButton(
                 onPressed: _updateDisplayName,
                 child: Text('Update Display Name'),
               ),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                ),
-              ),
+              SizedBox(height: 16),
+              Text(currentUser?.email ?? '', style: widget.textStyle),
               ElevatedButton(
                 onPressed: _updateEmail,
                 child: Text('Update Email'),
               ),
-              TextField(
-                controller: _phoneNumberController,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                ),
-              ),
-              ElevatedButton(
-                onPressed: _updatePhoneNumber,
-                child: Text('Update Phone Number'),
-              ),
+              SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -87,13 +64,19 @@ class ProfilePageState extends State<ProfilePage> {
                 onPressed: _updatePassword,
                 child: Text('Update Password'),
               ),
+              SizedBox(height: 16),
               if (currentUser!.providerData
                   .where((element) => element.providerId == 'google.com')
                   .isEmpty)
                 ElevatedButton(
                   onPressed: _linkGoogleAccount,
                   child: Text('Link Google Account'),
-                ),
+                )
+              else
+                ElevatedButton(
+                    onPressed: _unlinkGoogleAccount,
+                    child: Text('Unlink Google Account')),
+              SizedBox(height: 16),
               ElevatedButton(
                   onPressed: () {
                     showDialog(
@@ -114,48 +97,84 @@ class ProfilePageState extends State<ProfilePage> {
 
   Future<void> _updateDisplayName() async {
     try {
-      await currentUser?.updateDisplayName(_displayNameController.text);
+      String? displayName = await showDialog(
+          context: context,
+          builder: (context) => TextPromptDialog(
+                title: 'Display Name',
+                initialValue: currentUser?.displayName,
+              ));
+      if (displayName == null) return;
+      await currentUser?.updateDisplayName(displayName);
       setState(() {
         currentUser = _auth.currentUser;
       });
     } catch (e) {
-      _showError(e.toString());
+      var message = "Failed to update display name";
+      if (e is FirebaseAuthException) {
+        message = e.message ?? message;
+      }
+      _showMessage(message);
     }
   }
 
   Future<void> _updateEmail() async {
     try {
-      await currentUser?.updateEmail(_emailController.text);
+      String? email = await showDialog(
+          context: context,
+          builder: (context) => TextPromptDialog(
+                title: 'Email',
+                initialValue: currentUser?.email,
+              ));
+      if (email == null) return;
+      await currentUser?.updateEmail(email);
       setState(() {
         currentUser = _auth.currentUser;
       });
     } catch (e) {
-      _showError(e.toString());
+      var message = "Failed to update email";
+      if (e is FirebaseAuthException) {
+        message = e.message ?? message;
+      }
+      _showMessage(message);
     }
-  }
-
-  Future<void> _updatePhoneNumber() async {
-    // Phone number updating requires a more complex flow involving SMS verification.
-    // This is a placeholder and the actual implementation would be more involved.
-    print("Phone number updating goes here");
   }
 
   Future<void> _updatePhotoUrl() async {
     try {
-      await currentUser?.updatePhotoURL(_photoUrlController.text);
+      await currentUser?.updatePhotoURL(currentUser?.photoURL);
       setState(() {
         currentUser = _auth.currentUser;
       });
     } catch (e) {
-      _showError(e.toString());
+      _showMessage(e.toString());
     }
   }
 
   Future<void> _updatePassword() async {
     try {
       await currentUser?.updatePassword(_passwordController.text);
+      _showMessage("Password Updated");
+      setState(() {
+        _passwordController.text = '';
+      });
     } catch (e) {
-      _showError(e.toString());
+      var message = "Failed to update password";
+      if (e is FirebaseAuthException) {
+        message = e.message ?? message;
+      }
+      _showMessage(message);
+    }
+  }
+
+  Future<void> _unlinkGoogleAccount() async {
+    try {
+      await currentUser?.unlink('google.com');
+      setState(() {
+        currentUser = _auth.currentUser;
+      });
+    } catch (e) {
+      print(e);
+      _showMessage("Failed to unlink Google Account");
     }
   }
 
@@ -175,22 +194,19 @@ class ProfilePageState extends State<ProfilePage> {
         });
       }
     } catch (e) {
-      _showError(e.toString());
+      print(e);
+      _showMessage("Failed to link Google Account");
     }
   }
 
-  void _showError(String error) {
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error)),
+      SnackBar(content: Text(message)),
     );
   }
 
   @override
   void dispose() {
-    _displayNameController.dispose();
-    _emailController.dispose();
-    _phoneNumberController.dispose();
-    _photoUrlController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
