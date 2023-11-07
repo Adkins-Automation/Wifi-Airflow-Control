@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:wifi_airflow_control/ui/register_page.dart';
 
@@ -55,9 +56,20 @@ class SignInPageState extends State<SignInPage> {
       }
     } catch (error) {
       print(error);
-      // TODO: convert to useful errors to display to user
-      return error.toString();
+      if (error is PlatformException) {
+        PlatformException e = error;
+        var message = capitalize(e.code.replaceAll('_', ' '));
+        return message;
+      }
+      return "Google Sign In Failed";
     }
+  }
+
+  String capitalize(String input) {
+    return input
+        .split(" ")
+        .map((str) => str[0].toUpperCase() + str.substring(1))
+        .join(" ");
   }
 
   @override
