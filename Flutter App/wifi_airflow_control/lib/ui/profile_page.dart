@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -12,11 +13,11 @@ class ProfilePageState extends State<ProfilePage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   User? currentUser;
 
-  TextEditingController _displayNameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _phoneNumberController = TextEditingController();
-  TextEditingController _photoUrlController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
+  final _photoUrlController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void initState() {
@@ -95,8 +96,13 @@ class ProfilePageState extends State<ProfilePage> {
                 ),
               ElevatedButton(
                   onPressed: () {
-                    _auth.signOut();
-                    Navigator.pop(context);
+                    showDialog(
+                        context: context,
+                        builder: (context) => SignOutDialog(() {
+                              _auth
+                                  .signOut()
+                                  .then((_) => Navigator.pop(context));
+                            }));
                   },
                   child: Text('Sign Out')),
             ],

@@ -8,7 +8,6 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
 import 'package:wifi_airflow_control/dto/last_change.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
-import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 import 'package:wifi_airflow_control/ui/profile_page.dart';
 import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
@@ -325,23 +324,15 @@ class MainPageState extends State<MainPage> {
             onPressed: () async {
               if (_auth.currentUser == null) {
                 await _showSignInPage(context);
-                _downloadDampers();
               } else {
-                // placeholder till sign out bug on profile page is fixed
-                // showDialog(
-                //     context: context,
-                //     builder: (context) => SignOutDialog(_signOut));
-
-                // TODO: fix sign out bug, main page state not set properly
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProfilePage(),
                   ),
-                ).then((_) {
-                  _downloadDampers();
-                });
+                );
               }
+              _downloadDampers();
             },
           )
         ],
@@ -534,18 +525,5 @@ class MainPageState extends State<MainPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Connection failed: $reason')),
     );
-  }
-
-  Future<void> _signOut() async {
-    // Perform sign-out logic using Firebase Authentication
-    try {
-      await _auth.signOut();
-      setState(() {
-        _dampers = {};
-      });
-    } catch (e) {
-      // Handle sign-out errors
-      print('Sign-out failed: $e');
-    }
   }
 }
