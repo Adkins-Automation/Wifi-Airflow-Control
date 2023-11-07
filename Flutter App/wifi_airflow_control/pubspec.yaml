@@ -50,6 +50,7 @@ dependencies:
   flutter_blue: ^0.8.0
   permission_handler: ^11.0.1
   qr_code_scanner: ^1.0.1
+  connectivity: ^3.0.6
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +62,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  test: ^1.24.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

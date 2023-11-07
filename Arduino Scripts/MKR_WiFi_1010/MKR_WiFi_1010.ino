@@ -5,28 +5,12 @@
 #include <ArduinoHttpClient.h>
 #include <ArduinoJson.h>
 
+#define SERVO_PIN 9
+
 #define DATABASE_URL "iflow-fe711-default-rtdb.firebaseio.com"
 #define DATABASE_SECRET "Y9Fjdu4CvnlpcBMtpTGx13hj4aQ5eFAwm4cQWhZn"
 
-//Define Firebase data object
-FirebaseData fbdo;
-
-Servo myservo;
-int position = 0; // Initial position
-bool pauseSchedule = false;
-
-String mac; // used as damper id
-String devicePath;
-String labelPath;
-String positionPath; // firebase path to position value of this damper
-String lastHeartbeatPath;
-String schedulePath;
-String pauseSchedulePath;
-String lastChangePath;
-
-unsigned long initialUnixTime = 0;     // Unix timestamp from server
-unsigned long initialMillis = 0;       // millis() value when unixtime was retrieved
-unsigned long lastScheduleCheck = 0;
+#define MAX_SCHEDULES 10  // Assuming a maximum of 10 schedule entries. Adjust as needed.
 
 // Define the maximum lengths for the strings (including null terminators)
 #define MAX_SSID_LENGTH 32
@@ -47,18 +31,15 @@ struct LastChange {
   bool scheduled;
 };
 
-LastChange lastChange;
-
 struct Schedule {
     int time;
     int days;
     int position;
 };
 
-#define MAX_SCHEDULES 10  // Assuming a maximum of 10 schedule entries. Adjust as needed.
-
+Servo servo;
+FirebaseData fbdo;
 WifiCredentials newCredentials;
-
 // Create an instance of the struct for flash storage
 FlashStorage(flashStorage, WifiCredentials);
 
@@ -71,6 +52,23 @@ HttpClient client = HttpClient(wifi, "worldtimeapi.org", 80);
 
 // Global variables for WiFi and Firebase
 String ssid, password, userId;
+
+int position = 0; // Initial position
+bool pauseSchedule = false;
+LastChange lastChange;
+
+unsigned long initialUnixTime = 0;     // Unix timestamp from server
+unsigned long initialMillis = 0;       // millis() value when unixtime was retrieved
+unsigned long lastScheduleCheck = 0;
+
+String mac; // used as damper id
+String devicePath;
+String labelPath;
+String positionPath; // firebase path to position value of this damper
+String lastHeartbeatPath;
+String schedulePath;
+String pauseSchedulePath;
+String lastChangePath;
 
 void setup() {
   Serial.begin(9600);
@@ -115,7 +113,7 @@ void setup() {
   connectToWiFi();
   connectToFirebase();
 
-  myservo.attach(9);
+  servo.attach(SERVO_PIN);
   
   devicePath = userId + "/" + mac;
   positionPath = devicePath + "/position";
@@ -134,7 +132,7 @@ void setup() {
   }else if (Firebase.getInt(fbdo, positionPath)) {
     position = fbdo.intData();
     Serial.println("retreived position: " + String(position));
-    myservo.write(position);
+    servo.write(position);
     getCurrentMillis();
     sendHeartbeat();
   }
@@ -147,7 +145,7 @@ void loop() {
     Serial.println(fbdo.intData());
     int newPosition = fbdo.intData();
     if (newPosition != position) {
-      myservo.write(newPosition);
+      servo.write(newPosition);
       position = newPosition;
       setLastChange(false);
     }
@@ -165,7 +163,7 @@ void loop() {
     if(fbdo.errorReason() == "path not exist"){
       Serial.println("resetting...");
       position = 0;
-      myservo.write(position);
+      servo.write(position);
       resetWifiModule();
       eraseWifiCredentials();
       initialize();
@@ -378,7 +376,7 @@ void applySchedule() {
   }
 
   if (scheduledPosition != -1 && scheduledPosition != position) {
-    myservo.write(scheduledPosition);
+    servo.write(scheduledPosition);
     position = scheduledPosition;
     setPosition();
     setLastChange(true);

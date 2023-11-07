@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/ui/qr_scan_page.dart';
 
 class NewDamperPage extends StatefulWidget {
@@ -14,16 +15,6 @@ class NewDamperPageState extends State<NewDamperPage> {
 
   @override
   Widget build(BuildContext context) {
-    // damperId = "08b61f82f372";
-    // ssid = "Zenfone 9_3070";
-    // password = "mme9h4xpeq9mtdw";
-    // ssid = "Adkins";
-    // password = "chuck1229";
-
-    // damperIdController.text = damperId ?? '';
-    // ssidController.text = ssid ?? '';
-    // passwordController.text = password;
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Enter Details"),
@@ -70,18 +61,44 @@ class NewDamperPageState extends State<NewDamperPage> {
 
                   if (scannedResult != null) {
                     setState(() {
-                      damperIdController.text = scannedResult;
+                      var damperId = parseDamperId(scannedResult);
+                      if (damperId != null) {
+                        damperIdController.text = damperId;
+                      } else {
+                        var wifiInfo = parseWifiQR(scannedResult);
+                        if (wifiInfo.containsKey('S')) {
+                          ssidController.text = wifiInfo['S']!;
+                          if (wifiInfo.containsKey('P')) {
+                            passwordController.text = wifiInfo['P']!;
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Invalid QR Code')),
+                          );
+                        }
+                      }
+                      enableConnect = damperIdController.text.isNotEmpty &&
+                          ssidController.text.isNotEmpty;
                     });
                   }
                 }),
-            // TODO: add qr scanner for wifi creds
             ElevatedButton(
               onPressed: (enableConnect)
                   ? () {
-                      Navigator.pop(context, {
-                        'damperId': damperIdController.text,
-                        'ssid': ssidController.text,
-                        'password': passwordController.text,
+                      FlutterBlue.instance.isOn.then((isOn) {
+                        if (isOn) {
+                          Navigator.pop(context, {
+                            'damperId': damperIdController.text,
+                            'ssid': ssidController.text,
+                            'password': passwordController.text,
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'Please enable Bluetooth on your phone')),
+                          );
+                        }
                       });
                     }
                   : null,
@@ -91,5 +108,28 @@ class NewDamperPageState extends State<NewDamperPage> {
         ),
       ),
     );
+  }
+
+  Map<String, String> parseWifiQR(String qrResult) {
+    Map<String, String> wifiInfo = {};
+
+    if (qrResult.startsWith('WIFI:')) {
+      qrResult = qrResult.substring(5); // Remove 'WIFI:' prefix
+      List<String> parts = qrResult.split(';');
+      for (String part in parts) {
+        List<String> keyValue = part.split(':');
+        if (keyValue.length == 2) {
+          wifiInfo[keyValue[0]] = keyValue[1];
+        }
+      }
+    }
+    return wifiInfo;
+  }
+
+  String? parseDamperId(String qrResult) {
+    if (qrResult.startsWith('DAMPER:')) {
+      return qrResult.substring(7);
+    }
+    return null;
   }
 }
