@@ -14,6 +14,7 @@ import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
 import 'package:wifi_airflow_control/ui/sign_in_page.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:connectivity/connectivity.dart';
 import 'widgets/damper_slider.dart';
 import 'dialogs/delete_damper_dialog.dart';
 import 'new_damper_page.dart';
@@ -29,6 +30,7 @@ class MainPageState extends State<MainPage> {
   Map<String, Damper> _dampers = {};
   FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _isConnecting = false;
+  bool _isInternetConnected = false;
 
   @override
   void initState() {
@@ -40,6 +42,25 @@ class MainPageState extends State<MainPage> {
 
     Timer.periodic(Duration(minutes: 1), (timer) {
       _downloadDampers();
+    });
+
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      if (result == ConnectivityResult.wifi) {
+        // WiFi connected
+        setState(() {
+          _isInternetConnected = true;
+        });
+      } else if (result == ConnectivityResult.mobile) {
+        // Mobile data connected
+        setState(() {
+          _isInternetConnected = true;
+        });
+      } else {
+        // No internet connection
+        setState(() {
+          _isInternetConnected = false;
+        });
+      }
     });
   }
 
@@ -294,7 +315,8 @@ class MainPageState extends State<MainPage> {
         title: const Text("iFlow"),
         actions: <Widget>[
           IconButton(
-            icon: (_auth.currentUser == null ||
+            icon: (!_isInternetConnected ||
+                    _auth.currentUser == null ||
                     _auth.currentUser?.photoURL == null)
                 ? Icon(Icons.account_circle)
                 : ClipOval(
@@ -324,109 +346,123 @@ class MainPageState extends State<MainPage> {
           )
         ],
       ),
-      body: RefreshIndicator(
-          onRefresh: () async {
-            _downloadDampers();
-          },
-          child: ListView.builder(
-            itemCount: _dampers.length,
-            itemBuilder: (context, index) {
-              //print("$index, ${_dampers.values.elementAt(index)}");
-              final damper = _dampers.values.elementAt(index);
-              final isOnline = damper.isOnline();
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isInternetConnected
+          ? RefreshIndicator(
+              onRefresh: () async {
+                _downloadDampers();
+              },
+              child: ListView.builder(
+                itemCount: _dampers.length,
+                itemBuilder: (context, index) {
+                  //print("$index, ${_dampers.values.elementAt(index)}");
+                  final damper = _dampers.values.elementAt(index);
+                  final isOnline = damper.isOnline();
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              key: UniqueKey(),
-                              initialValue: damper.label,
-                              onChanged: (value) {
-                                damper.label = value;
-                                _uploadDampers();
-                              },
-                            ),
-                          ),
-                          Text(isOnline ? "Online" : "Offline"),
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: isOnline ? Colors.green : Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.schedule),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SchedulePage(damper),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  key: UniqueKey(),
+                                  initialValue: damper.label,
+                                  onChanged: (value) {
+                                    damper.label = value;
+                                    _uploadDampers();
+                                  },
                                 ),
-                              );
-                            },
+                              ),
+                              Text(isOnline ? "Online" : "Offline"),
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: isOnline ? Colors.green : Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.schedule),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          SchedulePage(damper),
+                                    ),
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () =>
+                                    _showDeleteDamperDialog(context, index),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () =>
-                                _showDeleteDamperDialog(context, index),
+                          const SizedBox(height: 16.0),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Expanded(
+                                child: DamperSlider(
+                                  initialValue: damper.currentPosition,
+                                  onEnd: (endValue) {
+                                    _updatePosition(damper.id, endValue);
+                                    // wait 5 seconds then get lastChange
+                                    Future.delayed(Duration(seconds: 5), () {
+                                      _db
+                                          .child(_auth.currentUser!.uid)
+                                          .child(damper.id)
+                                          .child('lastChange')
+                                          .get()
+                                          .then((snapshot) {
+                                        if (!snapshot.exists) {
+                                          _updatePosition(damper.id, 0);
+                                          return;
+                                        }
+                                        final lastChangeData = snapshot.value
+                                            as Map<dynamic, dynamic>;
+                                        damper.lastChange = LastChange(
+                                          lastChangeData['time'],
+                                          lastChangeData['position'],
+                                          lastChangeData['scheduled'],
+                                        );
+
+                                        if (damper.lastChange!.position ==
+                                            damper.currentPosition) return;
+
+                                        _updatePosition(damper.id,
+                                            damper.lastChange!.position);
+                                      });
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16.0),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Expanded(
-                            child: DamperSlider(
-                              initialValue: damper.currentPosition,
-                              onEnd: (endValue) {
-                                _updatePosition(damper.id, endValue);
-                                // wait 5 seconds then get lastChange
-                                Future.delayed(Duration(seconds: 5), () {
-                                  _db
-                                      .child(_auth.currentUser!.uid)
-                                      .child(damper.id)
-                                      .child('lastChange')
-                                      .get()
-                                      .then((snapshot) {
-                                    if (!snapshot.exists) {
-                                      _updatePosition(damper.id, 0);
-                                      return;
-                                    }
-                                    final lastChangeData =
-                                        snapshot.value as Map<dynamic, dynamic>;
-                                    damper.lastChange = LastChange(
-                                      lastChangeData['time'],
-                                      lastChangeData['position'],
-                                      lastChangeData['scheduled'],
-                                    );
-
-                                    if (damper.lastChange!.position ==
-                                        damper.currentPosition) return;
-
-                                    _updatePosition(
-                                        damper.id, damper.lastChange!.position);
-                                  });
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
+                  );
+                },
+              ))
+          : Container(
+              color: Colors.black54,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'No Internet Connection',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
-                ),
-              );
-            },
-          )),
+                ],
+              ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addDamper,
         tooltip: 'Add new device',
