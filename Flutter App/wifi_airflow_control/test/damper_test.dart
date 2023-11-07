@@ -1,5 +1,4 @@
 import 'package:test/test.dart';
-import 'package:wifi_airflow_control/dto/last_change.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
 import 'package:wifi_airflow_control/dto/damper.dart'; // Assuming your Damper class is in this file
 
