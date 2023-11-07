@@ -36,10 +36,6 @@ class ProfilePageState extends State<ProfilePage> {
             children: [
               if (currentUser?.photoURL != null)
                 ClipOval(child: Image.network(currentUser!.photoURL!)),
-              ElevatedButton(
-                onPressed: _updatePhotoUrl,
-                child: Text('Update Photo'),
-              ),
               SizedBox(height: 16),
               Text(currentUser?.displayName ?? '', style: widget.textStyle),
               ElevatedButton(
@@ -136,17 +132,6 @@ class ProfilePageState extends State<ProfilePage> {
         message = e.message ?? message;
       }
       _showMessage(message);
-    }
-  }
-
-  Future<void> _updatePhotoUrl() async {
-    try {
-      await currentUser?.updatePhotoURL(currentUser?.photoURL);
-      setState(() {
-        currentUser = _auth.currentUser;
-      });
-    } catch (e) {
-      _showMessage(e.toString());
     }
   }
 
