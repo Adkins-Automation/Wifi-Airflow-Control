@@ -61,11 +61,27 @@ class NewDamperPageState extends State<NewDamperPage> {
 
                   if (scannedResult != null) {
                     setState(() {
-                      damperIdController.text = scannedResult;
+                      var damperId = parseDamperId(scannedResult);
+                      if (damperId != null) {
+                        damperIdController.text = damperId;
+                      } else {
+                        var wifiInfo = parseWifiQR(scannedResult);
+                        if (wifiInfo.containsKey('S')) {
+                          ssidController.text = wifiInfo['S']!;
+                          if (wifiInfo.containsKey('P')) {
+                            passwordController.text = wifiInfo['P']!;
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Invalid QR Code')),
+                          );
+                        }
+                      }
+                      enableConnect = damperIdController.text.isNotEmpty &&
+                          ssidController.text.isNotEmpty;
                     });
                   }
                 }),
-            // TODO: add qr scanner for wifi creds
             ElevatedButton(
               onPressed: (enableConnect)
                   ? () {
@@ -92,5 +108,28 @@ class NewDamperPageState extends State<NewDamperPage> {
         ),
       ),
     );
+  }
+
+  Map<String, String> parseWifiQR(String qrResult) {
+    Map<String, String> wifiInfo = {};
+
+    if (qrResult.startsWith('WIFI:')) {
+      qrResult = qrResult.substring(5); // Remove 'WIFI:' prefix
+      List<String> parts = qrResult.split(';');
+      for (String part in parts) {
+        List<String> keyValue = part.split(':');
+        if (keyValue.length == 2) {
+          wifiInfo[keyValue[0]] = keyValue[1];
+        }
+      }
+    }
+    return wifiInfo;
+  }
+
+  String? parseDamperId(String qrResult) {
+    if (qrResult.startsWith('DAMPER:')) {
+      return qrResult.substring(7);
+    }
+    return null;
   }
 }
