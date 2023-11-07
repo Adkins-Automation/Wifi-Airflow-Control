@@ -457,21 +457,32 @@ class MainPageState extends State<MainPage> {
   }
 
   void _showConnectingDialog() {
-    // TODO: add cancel button, set dismissable to false
     _isConnecting = true;
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          content: Row(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text("Connecting..."),
+              Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Text("Connecting..."),
+                ],
+              ),
+              ElevatedButton(
+                  onPressed: () {
+                    _isConnecting = false;
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel')),
             ],
           ),
         );
       },
+      barrierDismissible: false,
     ).then((value) => _isConnecting = false);
   }
 
