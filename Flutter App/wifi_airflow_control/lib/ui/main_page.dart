@@ -241,11 +241,11 @@ class MainPageState extends State<MainPage> {
             }
 
             LastChange? lastChange;
-            if (data['lastUpdate'] != null) {
+            if (data['lastChange'] != null) {
               lastChange = LastChange(
-                  data['lastUpdate']['time'],
-                  data['lastUpdate']['position'],
-                  data['lastUpdate']['scheduled']);
+                  data['lastChange']['time'],
+                  data['lastChange']['position'],
+                  data['lastChange']['scheduled']);
             }
 
             return MapEntry(
