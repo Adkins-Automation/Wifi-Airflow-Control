@@ -207,14 +207,12 @@ class MainPageState extends State<MainPage> {
     var result = await _showNewDamperDialog(context);
     String? damperId = result?['damperId'];
     String? ssid = result?['ssid'];
-    String? password = result?['password'];
+    String? password = result?['password'] ?? '';
 
     if (damperId != null &&
         damperId.isNotEmpty &&
         ssid != null &&
-        ssid.isNotEmpty &&
-        password != null &&
-        password.isNotEmpty) {
+        ssid.isNotEmpty) {
       _connectToDamper(damperId, ssid, password, _auth.currentUser!.uid);
     }
   }
@@ -261,6 +259,13 @@ class MainPageState extends State<MainPage> {
               ),
             );
           });
+
+          // _dampers.forEach((key, value) {
+          //   if (value.lastChange == null) return;
+          //   if (value.currentPosition != value.lastChange!.position) {
+          //     _updatePosition(key, value.lastChange!.position);
+          //   }
+          // });
         });
       }
     });
