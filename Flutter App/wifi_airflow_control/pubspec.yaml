@@ -52,6 +52,9 @@ dependencies:
   qr_code_scanner: ^1.0.1
   connectivity: ^3.0.6
 
+   #shared pref
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
