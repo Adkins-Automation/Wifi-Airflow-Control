@@ -18,6 +18,8 @@ import 'package:connectivity/connectivity.dart';
 import 'widgets/damper_slider.dart';
 import 'dialogs/delete_damper_dialog.dart';
 import 'new_damper_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wifi_airflow_control/main.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -31,11 +33,18 @@ class MainPageState extends State<MainPage> {
   FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _isConnecting = false;
   bool _isInternetConnected = false;
+  SharedPreferences? prefs;
+
+  void getPref() async {
+    prefs = await SharedPreferences.getInstance();
+       WidgetsBinding.instance
+        .addPostFrameCallback((_) => getTheme());
+  }
 
   @override
   void initState() {
     super.initState();
-
+    getPref();
     if (_auth.currentUser != null) {
       _downloadDampers();
     }
@@ -63,6 +72,22 @@ class MainPageState extends State<MainPage> {
       }
     });
   }
+
+  void getTheme()
+{
+    bool? theme = prefs?.getBool('lightTheme'); 
+  if(theme != null)
+  {
+    if(theme == true)
+        {
+        App.of(context).changeTheme(ThemeMode.light);
+        }
+        else if(theme == false)
+        {
+        App.of(context).changeTheme(ThemeMode.dark);
+        }
+    }
+}
 
   Future<bool> _requestBluetoothScanPermission() async {
     // This maps the permission_handler's Permission to the Android-specific string
