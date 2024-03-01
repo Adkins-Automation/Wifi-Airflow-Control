@@ -34,11 +34,13 @@ class ConnectingDialogState extends State<ConnectingDialog> {
         ],
       ),
       actions: <Widget>[
-        ElevatedButton(
-          child: Text('Cancel'),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+        Center(
+          child: ElevatedButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       ],
     );
