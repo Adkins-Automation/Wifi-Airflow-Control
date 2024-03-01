@@ -8,6 +8,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
 import 'package:wifi_airflow_control/dto/last_change.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
+import 'package:wifi_airflow_control/ui/dialogs/connecting_dialog.dart';
 import 'package:wifi_airflow_control/ui/profile_page.dart';
 import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
@@ -93,7 +94,9 @@ class MainPageState extends State<MainPage> {
     var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
 
-    _showConnectingDialog();
+    // Show connecting dialog and get the key to update the message
+    final GlobalKey<ConnectingDialogState> connectingDialogKey =
+        _showConnectingDialog();
 
     flutterBlue.startScan(
         withServices: [Guid(wifiServiceUUID)],
@@ -138,7 +141,8 @@ class MainPageState extends State<MainPage> {
               _showFailureMessage(error.toString());
             });
 
-            //TODO: Update dialog message here to 'Registering damper...'
+            connectingDialogKey.currentState
+                ?.updateMessage("Registering damper...");
 
             // Discover services after connecting to the device
             List<BluetoothService> services =
@@ -488,34 +492,20 @@ class MainPageState extends State<MainPage> {
     );
   }
 
-  void _showConnectingDialog() {
+  GlobalKey<ConnectingDialogState> _showConnectingDialog() {
     _isConnecting = true;
+    final GlobalKey<ConnectingDialogState> connectingDialogKey =
+        GlobalKey<ConnectingDialogState>();
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 20),
-                  Text("Connecting..."),
-                ],
-              ),
-              ElevatedButton(
-                  onPressed: () {
-                    _isConnecting = false;
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Cancel')),
-            ],
-          ),
-        );
+        return ConnectingDialog(
+            key: connectingDialogKey,
+            initialMessage: "Connecting to damper...");
       },
       barrierDismissible: false,
     ).then((_) => _isConnecting = false);
+    return connectingDialogKey;
   }
 
   void _showSuccessMessage() {
