@@ -8,6 +8,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_airflow_control/dto/damper.dart';
 import 'package:wifi_airflow_control/dto/last_change.dart';
 import 'package:wifi_airflow_control/dto/schedule.dart';
+import 'package:wifi_airflow_control/ui/dialogs/connecting_dialog.dart';
 import 'package:wifi_airflow_control/ui/profile_page.dart';
 import 'package:wifi_airflow_control/ui/schedule_page.dart';
 import 'package:wifi_airflow_control/util/constants.dart';
@@ -17,6 +18,8 @@ import 'package:connectivity/connectivity.dart';
 import 'widgets/damper_slider.dart';
 import 'dialogs/delete_damper_dialog.dart';
 import 'new_damper_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wifi_airflow_control/main.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -30,11 +33,17 @@ class MainPageState extends State<MainPage> {
   FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _isConnecting = false;
   bool _isInternetConnected = false;
+  SharedPreferences? prefs;
+
+  void getPref() async {
+    prefs = await SharedPreferences.getInstance();
+    WidgetsBinding.instance.addPostFrameCallback((_) => getTheme());
+  }
 
   @override
   void initState() {
     super.initState();
-
+    getPref();
     if (_auth.currentUser != null) {
       _downloadDampers();
     }
@@ -61,6 +70,17 @@ class MainPageState extends State<MainPage> {
         });
       }
     });
+  }
+
+  void getTheme() {
+    bool? theme = prefs?.getBool('lightTheme');
+    if (theme != null) {
+      if (theme == true) {
+        App.of(context).changeTheme(ThemeMode.light);
+      } else if (theme == false) {
+        App.of(context).changeTheme(ThemeMode.dark);
+      }
+    }
   }
 
   Future<bool> _requestBluetoothScanPermission() async {
@@ -93,7 +113,9 @@ class MainPageState extends State<MainPage> {
     var granted = await _requestBluetoothScanPermission();
     if (!granted) return;
 
-    _showConnectingDialog();
+    // Show connecting dialog and get the key to update the message
+    final GlobalKey<ConnectingDialogState> connectingDialogKey =
+        _showConnectingDialog();
 
     flutterBlue.startScan(
         withServices: [Guid(wifiServiceUUID)],
@@ -138,7 +160,8 @@ class MainPageState extends State<MainPage> {
               _showFailureMessage(error.toString());
             });
 
-            //TODO: Update dialog message here to 'Registering damper...'
+            connectingDialogKey.currentState
+                ?.updateMessage("Registering damper...");
 
             // Discover services after connecting to the device
             List<BluetoothService> services =
@@ -207,14 +230,12 @@ class MainPageState extends State<MainPage> {
     var result = await _showNewDamperDialog(context);
     String? damperId = result?['damperId'];
     String? ssid = result?['ssid'];
-    String? password = result?['password'];
+    String? password = result?['password'] ?? '';
 
     if (damperId != null &&
         damperId.isNotEmpty &&
         ssid != null &&
-        ssid.isNotEmpty &&
-        password != null &&
-        password.isNotEmpty) {
+        ssid.isNotEmpty) {
       _connectToDamper(damperId, ssid, password, _auth.currentUser!.uid);
     }
   }
@@ -241,11 +262,11 @@ class MainPageState extends State<MainPage> {
             }
 
             LastChange? lastChange;
-            if (data['lastUpdate'] != null) {
+            if (data['lastChange'] != null) {
               lastChange = LastChange(
-                  data['lastUpdate']['time'],
-                  data['lastUpdate']['position'],
-                  data['lastUpdate']['scheduled']);
+                  data['lastChange']['time'],
+                  data['lastChange']['position'],
+                  data['lastChange']['scheduled']);
             }
 
             return MapEntry(
@@ -261,6 +282,13 @@ class MainPageState extends State<MainPage> {
               ),
             );
           });
+
+          // _dampers.forEach((key, value) {
+          //   if (value.lastChange == null) return;
+          //   if (value.currentPosition != value.lastChange!.position) {
+          //     _updatePosition(key, value.lastChange!.position);
+          //   }
+          // });
         });
       }
     });
@@ -483,34 +511,20 @@ class MainPageState extends State<MainPage> {
     );
   }
 
-  void _showConnectingDialog() {
+  GlobalKey<ConnectingDialogState> _showConnectingDialog() {
     _isConnecting = true;
+    final GlobalKey<ConnectingDialogState> connectingDialogKey =
+        GlobalKey<ConnectingDialogState>();
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 20),
-                  Text("Connecting..."),
-                ],
-              ),
-              ElevatedButton(
-                  onPressed: () {
-                    _isConnecting = false;
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Cancel')),
-            ],
-          ),
-        );
+        return ConnectingDialog(
+            key: connectingDialogKey,
+            initialMessage: "Connecting to damper...");
       },
       barrierDismissible: false,
     ).then((_) => _isConnecting = false);
+    return connectingDialogKey;
   }
 
   void _showSuccessMessage() {

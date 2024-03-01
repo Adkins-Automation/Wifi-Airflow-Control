@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:wifi_airflow_control/ui/dialogs/sign_out_dialog.dart';
 import 'package:wifi_airflow_control/ui/dialogs/text_prompt_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wifi_airflow_control/main.dart';
 
 class ProfilePage extends StatefulWidget {
   final textStyle = TextStyle(fontSize: 20.0);
@@ -14,6 +16,11 @@ class ProfilePageState extends State<ProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
   User? currentUser;
+  SharedPreferences? prefs;
+
+  void getPref() async {
+    prefs = await SharedPreferences.getInstance();
+  }
 
   final _passwordController = TextEditingController();
 
@@ -21,6 +28,7 @@ class ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     currentUser = _auth.currentUser;
+    getPref();
   }
 
   @override
@@ -84,11 +92,35 @@ class ProfilePageState extends State<ProfilePage> {
                             }));
                   },
                   child: Text('Sign Out')),
+              ElevatedButton(
+                  onPressed: () => changeTheme("L"), child: Text('Light')),
+              ElevatedButton(
+                  onPressed: () => changeTheme("D"), child: Text('Dark')),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void changeTheme(String mode) {
+    //final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs != null) {
+      bool? theme = prefs?.getBool('lightTheme');
+      if (mode == "L") {
+        prefs?.setBool('lightTheme', true);
+        theme = true;
+      } else if (mode == "D") {
+        prefs?.setBool('lightTheme', false);
+        theme = false;
+      }
+
+      if (theme == true) {
+        App.of(context).changeTheme(ThemeMode.light);
+      } else if (theme == false) {
+        App.of(context).changeTheme(ThemeMode.dark);
+      }
+    }
   }
 
   Future<void> _updateDisplayName() async {
