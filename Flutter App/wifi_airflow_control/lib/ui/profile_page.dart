@@ -92,12 +92,10 @@ class ProfilePageState extends State<ProfilePage> {
                             }));
                   },
                   child: Text('Sign Out')),
-                      ElevatedButton(
-                    onPressed: () => changeTheme("L"),
-                    child: Text('Light')),
-                ElevatedButton(
-                    onPressed: () => changeTheme("D"),
-                    child: Text('Dark')),
+              ElevatedButton(
+                  onPressed: () => changeTheme("L"), child: Text('Light')),
+              ElevatedButton(
+                  onPressed: () => changeTheme("D"), child: Text('Dark')),
             ],
           ),
         ),
@@ -106,27 +104,21 @@ class ProfilePageState extends State<ProfilePage> {
   }
 
   void changeTheme(String mode) {
-    //final SharedPreferences prefs = await SharedPreferences.getInstance(); 
-    if(prefs != null)
-    {
-    bool? theme = prefs?.getBool('lightTheme');
-      if(mode == "L")
-      {
-          prefs?.setBool('lightTheme', true);
-          theme = true;
-      } else if(mode == "D")
-      {
+    //final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs != null) {
+      bool? theme = prefs?.getBool('lightTheme');
+      if (mode == "L") {
+        prefs?.setBool('lightTheme', true);
+        theme = true;
+      } else if (mode == "D") {
         prefs?.setBool('lightTheme', false);
-          theme = false;
+        theme = false;
       }
 
-    if(theme == true)
-      {
+      if (theme == true) {
         App.of(context).changeTheme(ThemeMode.light);
-      }
-      else if(theme == false)
-      {
-      App.of(context).changeTheme(ThemeMode.dark);
+      } else if (theme == false) {
+        App.of(context).changeTheme(ThemeMode.dark);
       }
     }
   }

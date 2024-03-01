@@ -37,8 +37,7 @@ class MainPageState extends State<MainPage> {
 
   void getPref() async {
     prefs = await SharedPreferences.getInstance();
-       WidgetsBinding.instance
-        .addPostFrameCallback((_) => getTheme());
+    WidgetsBinding.instance.addPostFrameCallback((_) => getTheme());
   }
 
   @override
@@ -73,21 +72,16 @@ class MainPageState extends State<MainPage> {
     });
   }
 
-  void getTheme()
-{
-    bool? theme = prefs?.getBool('lightTheme'); 
-  if(theme != null)
-  {
-    if(theme == true)
-        {
+  void getTheme() {
+    bool? theme = prefs?.getBool('lightTheme');
+    if (theme != null) {
+      if (theme == true) {
         App.of(context).changeTheme(ThemeMode.light);
-        }
-        else if(theme == false)
-        {
+      } else if (theme == false) {
         App.of(context).changeTheme(ThemeMode.dark);
-        }
+      }
     }
-}
+  }
 
   Future<bool> _requestBluetoothScanPermission() async {
     // This maps the permission_handler's Permission to the Android-specific string

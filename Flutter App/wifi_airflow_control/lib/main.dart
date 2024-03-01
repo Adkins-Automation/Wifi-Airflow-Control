@@ -7,7 +7,7 @@ class App extends StatefulWidget {
   @override
   AppState createState() => AppState();
 
-   static AppState of(BuildContext context) => 
+  static AppState of(BuildContext context) =>
       context.findAncestorStateOfType<AppState>()!;
 }
 
@@ -19,12 +19,12 @@ class AppState extends State<App> {
       title: 'iFlow',
       theme: ThemeData(),
       darkTheme: ThemeData.dark(), // standard dark theme
-     themeMode: _themeMode,
+      themeMode: _themeMode,
       home: MainPage(),
     );
   }
 
-    void changeTheme(ThemeMode themeMode) {
+  void changeTheme(ThemeMode themeMode) {
     setState(() {
       _themeMode = themeMode;
     });
