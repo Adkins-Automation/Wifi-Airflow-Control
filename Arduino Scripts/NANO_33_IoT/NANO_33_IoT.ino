@@ -77,6 +77,9 @@ void setup() {
   Serial.println();
   Serial.println("setup started");
 
+  // initialize digital pin LED_BUILTIN as an output.
+  pinMode(LED_BUILTIN, OUTPUT);
+
   // Attempt to retrieve SSID, password, and user ID from flash storage
   WifiCredentials storedCredentials = flashStorage.read();
 
