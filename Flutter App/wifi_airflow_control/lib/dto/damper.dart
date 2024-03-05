@@ -21,18 +21,19 @@ class Damper {
   }
 
   bool isOnline() {
-    var sevenSeconds = 7 * 1000;
-    // var tmpHb = lastHeartbeat * 1000;
-    // var now = DateTime.now().millisecondsSinceEpoch;
-    // print("lastHeartbeat: $tmpHb");
-    // print("          now: $now");
-    // print(
-    //     "         diff: ${now - tmpHb} ms or ${(now - tmpHb) / 1000} seconds");
-    // print(" diff < 7 sec: ${now - tmpHb <= sevenSeconds}");
-    // print("_____________________________");
+    var thirtySeconds = 30 * 1000;
+
+    var tmpHb = lastHeartbeat * 1000;
+    var now = DateTime.now().millisecondsSinceEpoch;
+    print("lastHeartbeat: $tmpHb");
+    print("          now: $now");
+    print(
+        "         diff: ${now - tmpHb} ms or ${(now - tmpHb) / 1000} seconds");
+    print(" diff < 7 sec: ${now - tmpHb <= thirtySeconds}");
+    print("_____________________________");
 
     return ((DateTime.now().millisecondsSinceEpoch - (lastHeartbeat * 1000)) <=
-        sevenSeconds);
+        thirtySeconds);
   }
 
   @override
