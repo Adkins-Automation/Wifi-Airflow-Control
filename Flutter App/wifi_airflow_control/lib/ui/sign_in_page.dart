@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:wifi_airflow_control/ui/email_Wait_Page.dart';
 import 'package:wifi_airflow_control/ui/register_page.dart';
 
 class SignInPage extends StatefulWidget {
@@ -113,8 +114,19 @@ class SignInPageState extends State<SignInPage> {
                   passwordController.text.trim(),
                 ).then((response) {
                   if (response == "pass") {
-                    scaffold.showSnackBar(SnackBar(content: Text("Signed In")));
-                    Navigator.pop(context, _user);
+                    if (_user?.emailVerified ?? false)
+                    {
+                      scaffold.showSnackBar(SnackBar(content: Text("Signed In")));
+                      Navigator.pop(context, _user);
+                    } else {
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                      builder: (context) => EmailWaitPage(),
+                      ),
+                      );
+                    }
+                    
                   } else {
                     setState(() {
                       _error = response;

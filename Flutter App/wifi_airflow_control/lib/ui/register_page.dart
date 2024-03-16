@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:wifi_airflow_control/ui/email_Wait_Page.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -83,7 +84,16 @@ class RegisterPageState extends State<RegisterPage> {
                   if (response == 'pass') {
                     ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Account registered")));
-                    Navigator.pop(context, _user);
+                    //Navigator.pop(context, _user);
+
+                    Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EmailWaitPage(),
+                  ),
+                );
+
+
                   } else {
                     setState(() {
                       _error = response;
