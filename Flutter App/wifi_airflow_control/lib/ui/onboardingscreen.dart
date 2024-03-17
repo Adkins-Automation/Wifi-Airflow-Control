@@ -24,19 +24,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             },
             children: <Widget>[
               OnboardingPage(
-                imageUrl: 'assets/images/onboarding1.png',
                 title: 'Welcome to IFlow',
-                description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                description: 'An app designed to change the flow of air within any given room. ',
               ),
               OnboardingPage(
-                imageUrl: 'assets/images/onboarding2.png',
                 title: 'Discover Amazing Features',
-                description: 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                description: 'Login in and scan your qr code to start adding and controlling your air damper. ', 
               ),
               OnboardingPage(
-                imageUrl: 'assets/images/onboarding3.png',
+                title: '',
+                description: ' ',
+              ),
+              OnboardingPage(
+                title: '',
+                description: '',
+              ),
+              OnboardingPage(
                 title: 'Get Started Now',
-                description: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+                description: 'description.',
                 isLast: true,
               ),
             ],
@@ -48,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                3,
+                5,
                 (index) => buildDot(index),
               ),
             ),
@@ -86,14 +91,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class OnboardingPage extends StatelessWidget {
-  final String imageUrl;
   final String title;
   final String description;
   final bool isLast;
 
   const OnboardingPage({
     Key? key,
-    required this.imageUrl,
     required this.title,
     required this.description,
     this.isLast = false,
@@ -106,10 +109,7 @@ class OnboardingPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(
-            imageUrl,
-            height: 200,
-          ),
+          
           SizedBox(height: 30.0),
           Text(
             title,
