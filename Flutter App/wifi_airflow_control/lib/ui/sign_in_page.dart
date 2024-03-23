@@ -158,7 +158,7 @@ class SignInPageState extends State<SignInPage> {
               onPressed: () async {
                 await _signInWithGoogle().then((response) {
                   if (response == "pass") {
-                    Navigator.pop(context, _user);
+                    Navigator.pop(context);
                   } else {
                     setState(() {
                       _error = response;
