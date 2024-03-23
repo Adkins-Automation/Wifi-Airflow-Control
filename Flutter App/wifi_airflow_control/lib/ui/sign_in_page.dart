@@ -117,14 +117,19 @@ class SignInPageState extends State<SignInPage> {
                     if (_user?.emailVerified ?? false) {
                       scaffold
                           .showSnackBar(SnackBar(content: Text("Signed In")));
-                      Navigator.pop(context, _user);
+                      Navigator.pop(context);
                     } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EmailWaitPage(),
-                        ),
-                      );
+                      showDialog<bool?>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return EmailWaitPage();
+                        },
+                        barrierDismissible: false,
+                      ).then((isValidated) {
+                        if (isValidated != null) {
+                          Navigator.of(context).pop(isValidated);
+                        }
+                      });
                     }
                   } else {
                     setState(() {
@@ -137,12 +142,14 @@ class SignInPageState extends State<SignInPage> {
             ),
             ElevatedButton(
                 onPressed: () {
-                  Navigator.push<User?>(
+                  Navigator.push<bool?>(
                       context,
                       MaterialPageRoute(
                         builder: (context) => RegisterPage(),
-                      )).then((value) {
-                    if (value != null) Navigator.pop(context, value);
+                      )).then((isValidated) {
+                    if (isValidated != null) {
+                      Navigator.pop(context, isValidated);
+                    }
                   });
                 },
                 child: Text('Register')),

@@ -2,8 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:wifi_airflow_control/ui/profile_page.dart';
-
 class EmailWaitPage extends StatefulWidget {
   @override
   EmailWaitPageState createState() => EmailWaitPageState();
@@ -26,8 +24,7 @@ class EmailWaitPageState extends State<EmailWaitPage> {
       if (user?.emailVerified ?? false) {
         timer.cancel();
         if (mounted) {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => ProfilePage()));
+          Navigator.of(context).pop(true);
         }
       }
     });
@@ -41,9 +38,22 @@ class EmailWaitPageState extends State<EmailWaitPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text("Email verification link sent to your email")));
+    return AlertDialog(
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text("Email verification link sent to your email"),
+        SizedBox(height: 20),
+        CircularProgressIndicator(),
+      ]),
+      actions: <Widget>[
+        Center(
+          child: ElevatedButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

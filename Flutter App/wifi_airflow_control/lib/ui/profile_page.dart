@@ -6,6 +6,8 @@ import 'package:wifi_airflow_control/ui/dialogs/text_prompt_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wifi_airflow_control/main.dart';
 
+import 'main_page.dart';
+
 class ProfilePage extends StatefulWidget {
   final textStyle = TextStyle(fontSize: 20.0);
   @override

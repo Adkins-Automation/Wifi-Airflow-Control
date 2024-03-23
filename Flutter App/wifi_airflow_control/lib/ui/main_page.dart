@@ -34,6 +34,7 @@ class MainPageState extends State<MainPage> {
   bool _isConnecting = false;
   bool _isInternetConnected = false;
   SharedPreferences? prefs;
+  late StreamSubscription<ConnectivityResult> subscription;
 
   void getPref() async {
     prefs = await SharedPreferences.getInstance();
@@ -52,7 +53,9 @@ class MainPageState extends State<MainPage> {
       _downloadDampers();
     });
 
-    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+    subscription = Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) {
       if (result == ConnectivityResult.wifi) {
         // WiFi connected
         setState(() {
@@ -70,6 +73,12 @@ class MainPageState extends State<MainPage> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    subscription.cancel();
+    super.dispose();
   }
 
   void getTheme() {
@@ -499,8 +508,18 @@ class MainPageState extends State<MainPage> {
   }
 
   Future<void> _showSignInPage(BuildContext context) async {
-    await Navigator.push(
-        context, MaterialPageRoute(builder: ((context) => SignInPage())));
+    await Navigator.push<bool?>(
+            context, MaterialPageRoute(builder: ((context) => SignInPage())))
+        .then((justValidated) {
+      if (justValidated != null && justValidated) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfilePage(),
+          ),
+        );
+      }
+    });
   }
 
   Future<Map<String, String?>?> _showNewDamperDialog(

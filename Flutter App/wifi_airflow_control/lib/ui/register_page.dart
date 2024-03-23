@@ -13,6 +13,7 @@ class RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final nameController = TextEditingController();
   String? _error;
+  User? _user;
 
   Future<String> _register(
       {required String email, required String password, String? name}) async {
@@ -26,6 +27,9 @@ class RegisterPageState extends State<RegisterPage> {
       if (name != null) {
         await userCredential.user?.updateDisplayName(name);
       }
+      setState(() {
+        _user = userCredential.user;
+      });
       return "pass";
     } catch (e) {
       // Handle registration errors
@@ -80,14 +84,17 @@ class RegisterPageState extends State<RegisterPage> {
                   if (response == 'pass') {
                     ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Account registered")));
-                    //Navigator.pop(context, _user);
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EmailWaitPage(),
-                      ),
-                    );
+                    showDialog<bool?>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return EmailWaitPage();
+                      },
+                      barrierDismissible: false,
+                    ).then((isValidated) {
+                      if (isValidated != null) {
+                        Navigator.of(context).pop(isValidated);
+                      }
+                    });
                   } else {
                     setState(() {
                       _error = response;
