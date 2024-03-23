@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:wifi_airflow_control/ui/email_Wait_Page.dart';
+import 'package:wifi_airflow_control/ui/email_wait_page.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -9,7 +9,6 @@ class RegisterPage extends StatefulWidget {
 
 class RegisterPageState extends State<RegisterPage> {
   FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _user;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final nameController = TextEditingController();
@@ -27,9 +26,6 @@ class RegisterPageState extends State<RegisterPage> {
       if (name != null) {
         await userCredential.user?.updateDisplayName(name);
       }
-      setState(() {
-        _user = userCredential.user;
-      });
       return "pass";
     } catch (e) {
       // Handle registration errors
@@ -87,13 +83,11 @@ class RegisterPageState extends State<RegisterPage> {
                     //Navigator.pop(context, _user);
 
                     Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EmailWaitPage(),
-                  ),
-                );
-
-
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EmailWaitPage(),
+                      ),
+                    );
                   } else {
                     setState(() {
                       _error = response;
