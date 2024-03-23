@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:wifi_airflow_control/ui/email_wait_page.dart';
+import 'package:wifi_airflow_control/ui/dialogs/email_wait_dialog.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
