@@ -404,6 +404,7 @@ class MainPageState extends State<MainPage> {
                                   },
                                 ),
                               ),
+                              SizedBox(width: 10.0),
                               Text(isOnline ? "Online" : "Offline"),
                               Container(
                                 width: 10,

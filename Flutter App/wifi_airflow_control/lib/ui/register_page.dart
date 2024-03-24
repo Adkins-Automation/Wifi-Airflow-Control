@@ -44,67 +44,69 @@ class RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(title: Text("Register")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            if (_error != null)
-              Text(_error!,
-                  style: TextStyle(
-                    color: Colors.red,
-                  )),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Name (optional)',
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              if (_error != null)
+                Text(_error!,
+                    style: TextStyle(
+                      color: Colors.red,
+                    )),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Name (optional)',
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
+              SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
+              SizedBox(height: 16),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                _register(
-                        email: emailController.text.trim(),
-                        password: passwordController.text.trim(),
-                        name: nameController.text.trim())
-                    .then((response) {
-                  if (response == 'pass') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Account registered")));
-                    showDialog<bool?>(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return EmailWaitPage();
-                      },
-                      barrierDismissible: false,
-                    ).then((isValidated) {
-                      if (isValidated != null) {
-                        Navigator.of(context).pop(isValidated);
-                      }
-                    });
-                  } else {
-                    setState(() {
-                      _error = response;
-                    });
-                  }
-                });
-              },
-              child: Text('Register'),
-            )
-          ],
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  _register(
+                          email: emailController.text.trim(),
+                          password: passwordController.text.trim(),
+                          name: nameController.text.trim())
+                      .then((response) {
+                    if (response == 'pass') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Account registered")));
+                      showDialog<bool?>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return EmailWaitPage();
+                        },
+                        barrierDismissible: false,
+                      ).then((isValidated) {
+                        if (isValidated != null) {
+                          Navigator.of(context).pop(isValidated);
+                        }
+                      });
+                    } else {
+                      setState(() {
+                        _error = response;
+                      });
+                    }
+                  });
+                },
+                child: Text('Register'),
+              )
+            ],
+          ),
         ),
       ),
     );

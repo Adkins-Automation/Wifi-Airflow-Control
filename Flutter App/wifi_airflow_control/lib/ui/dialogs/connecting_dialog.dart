@@ -26,11 +26,12 @@ class ConnectingDialogState extends State<ConnectingDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      content: Row(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(width: 20),
           Text(message),
+          SizedBox(height: 20),
+          CircularProgressIndicator(),
         ],
       ),
       actions: <Widget>[

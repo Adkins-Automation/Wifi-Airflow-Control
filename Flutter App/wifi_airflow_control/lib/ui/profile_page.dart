@@ -6,8 +6,6 @@ import 'package:wifi_airflow_control/ui/dialogs/text_prompt_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wifi_airflow_control/main.dart';
 
-import 'main_page.dart';
-
 class ProfilePage extends StatefulWidget {
   final textStyle = TextStyle(fontSize: 20.0);
   @override
@@ -19,6 +17,7 @@ class ProfilePageState extends State<ProfilePage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   User? currentUser;
   SharedPreferences? prefs;
+  bool _darkMode = false;
 
   void getPref() async {
     prefs = await SharedPreferences.getInstance();
@@ -94,10 +93,24 @@ class ProfilePageState extends State<ProfilePage> {
                             }));
                   },
                   child: Text('Sign Out')),
-              ElevatedButton(
-                  onPressed: () => changeTheme("L"), child: Text('Light')),
-              ElevatedButton(
-                  onPressed: () => changeTheme("D"), child: Text('Dark')),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.wb_sunny,
+                      color: _darkMode ? Colors.grey : Colors.yellow),
+                  Switch(
+                    value: _darkMode,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _darkMode = value;
+                        changeTheme(_darkMode);
+                      });
+                    },
+                  ),
+                  Icon(Icons.nights_stay,
+                      color: _darkMode ? Colors.blue : Colors.grey),
+                ],
+              ),
             ],
           ),
         ),
@@ -105,23 +118,11 @@ class ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void changeTheme(String mode) {
+  void changeTheme(bool darkMode) {
     //final SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs != null) {
-      bool? theme = prefs?.getBool('lightTheme');
-      if (mode == "L") {
-        prefs?.setBool('lightTheme', true);
-        theme = true;
-      } else if (mode == "D") {
-        prefs?.setBool('lightTheme', false);
-        theme = false;
-      }
-
-      if (theme == true) {
-        App.of(context).changeTheme(ThemeMode.light);
-      } else if (theme == false) {
-        App.of(context).changeTheme(ThemeMode.dark);
-      }
+      prefs?.setBool('lightTheme', !darkMode);
+      App.of(context).changeTheme(darkMode ? ThemeMode.dark : ThemeMode.light);
     }
   }
 

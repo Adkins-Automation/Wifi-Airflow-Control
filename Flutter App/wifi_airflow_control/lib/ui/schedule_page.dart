@@ -114,63 +114,84 @@ class SchedulePageState extends State<SchedulePage> {
                           ),
                         ],
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: List.generate(8, (dayIndex) {
-                          // print(
-                          //     "isDaySet: $dayIndex, ${damper.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
-                          if (dayIndex == 7) {
-                            return Switch(
-                              value: damper.schedule[times[index]]!
-                                  .isDaySet(Schedule.everyday),
-                              onChanged: (active) {
-                                setState(() {
-                                  if (damper.schedule[times[index]]!
-                                      .isDaySet(Schedule.everyday)) {
-                                    damper.schedule[times[index]]!
-                                        .unsetDay(Schedule.everyday);
-                                  } else {
-                                    damper.schedule[times[index]]!
-                                        .setDay(Schedule.everyday);
-                                  }
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          double daySelectorWidth = constraints.maxWidth /
+                              8; // Assuming there are 7 day selectors
 
-                                  _updateDamperSchedule();
-                                });
-                              },
-                            );
-                          }
-                          return InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (damper.schedule[times[index]]!
-                                    .isDaySet(Schedule.getDay(dayIndex))) {
-                                  damper.schedule[times[index]]!
-                                      .unsetDay(Schedule.getDay(dayIndex));
-                                } else {
-                                  damper.schedule[times[index]]!
-                                      .setDay(Schedule.getDay(dayIndex));
-                                }
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: List.generate(8, (dayIndex) {
+                              // print(
+                              //     "isDaySet: $dayIndex, ${damper.schedule[times[index]]!.isDaySet(Schedule.getDay(dayIndex))}");
+                              if (dayIndex == 7) {
+                                return SizedBox(
+                                  width: daySelectorWidth,
+                                  child: Switch(
+                                    value: damper.schedule[times[index]]!
+                                        .isDaySet(Schedule.everyday),
+                                    onChanged: (active) {
+                                      setState(() {
+                                        if (damper.schedule[times[index]]!
+                                            .isDaySet(Schedule.everyday)) {
+                                          damper.schedule[times[index]]!
+                                              .unsetDay(Schedule.everyday);
+                                        } else {
+                                          damper.schedule[times[index]]!
+                                              .setDay(Schedule.everyday);
+                                        }
 
-                                _updateDamperSchedule();
-                              });
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: damper.schedule[times[index]]!
-                                      .isDaySet(Schedule.getDay(dayIndex))
-                                  ? Colors.blue
-                                  : Colors.grey,
-                              child: Text(
-                                ["M", "T", "W", "T", "F", "S", "S"][dayIndex],
-                                style: TextStyle(
-                                  color: damper.schedule[times[index]]!
+                                        _updateDamperSchedule();
+                                      });
+                                    },
+                                  ),
+                                );
+                              }
+                              return InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    if (damper.schedule[times[index]]!
+                                        .isDaySet(Schedule.getDay(dayIndex))) {
+                                      damper.schedule[times[index]]!
+                                          .unsetDay(Schedule.getDay(dayIndex));
+                                    } else {
+                                      damper.schedule[times[index]]!
+                                          .setDay(Schedule.getDay(dayIndex));
+                                    }
+
+                                    _updateDamperSchedule();
+                                  });
+                                },
+                                child: CircleAvatar(
+                                  backgroundColor: damper
+                                          .schedule[times[index]]!
                                           .isDaySet(Schedule.getDay(dayIndex))
-                                      ? Colors.white
-                                      : Colors.black,
+                                      ? Colors.blue
+                                      : Colors.grey,
+                                  radius: daySelectorWidth / 2,
+                                  child: Text(
+                                    [
+                                      "M",
+                                      "T",
+                                      "W",
+                                      "T",
+                                      "F",
+                                      "S",
+                                      "S"
+                                    ][dayIndex],
+                                    style: TextStyle(
+                                      color: damper.schedule[times[index]]!
+                                              .isDaySet(
+                                                  Schedule.getDay(dayIndex))
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           );
-                        }),
+                        },
                       ),
                       DamperSlider(
                         initialValue: damper.schedule[times[index]]!.position,

@@ -82,92 +82,94 @@ class SignInPageState extends State<SignInPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_error != null)
-              Text(_error!,
-                  style: TextStyle(
-                    color: Colors.red,
-                  )),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_error != null)
+                Text(_error!,
+                    style: TextStyle(
+                      color: Colors.red,
+                    )),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            TextFormField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
+              SizedBox(height: 16),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                // Perform sign-in logic
-                _signIn(
-                  emailController.text.trim(),
-                  passwordController.text.trim(),
-                ).then((response) {
-                  if (response == "pass") {
-                    if (_user?.emailVerified ?? false) {
-                      scaffold
-                          .showSnackBar(SnackBar(content: Text("Signed In")));
-                      Navigator.pop(context);
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  // Perform sign-in logic
+                  _signIn(
+                    emailController.text.trim(),
+                    passwordController.text.trim(),
+                  ).then((response) {
+                    if (response == "pass") {
+                      if (_user?.emailVerified ?? false) {
+                        scaffold
+                            .showSnackBar(SnackBar(content: Text("Signed In")));
+                        Navigator.pop(context);
+                      } else {
+                        showDialog<bool?>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return EmailWaitPage();
+                          },
+                          barrierDismissible: false,
+                        ).then((isValidated) {
+                          if (isValidated != null) {
+                            Navigator.of(context).pop(isValidated);
+                          }
+                        });
+                      }
                     } else {
-                      showDialog<bool?>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return EmailWaitPage();
-                        },
-                        barrierDismissible: false,
-                      ).then((isValidated) {
-                        if (isValidated != null) {
-                          Navigator.of(context).pop(isValidated);
-                        }
+                      setState(() {
+                        _error = response;
                       });
                     }
-                  } else {
-                    setState(() {
-                      _error = response;
+                  }); // _signIn
+                },
+                child: Text('Sign In'),
+              ),
+              ElevatedButton(
+                  onPressed: () {
+                    Navigator.push<bool?>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RegisterPage(),
+                        )).then((isValidated) {
+                      if (isValidated != null) {
+                        Navigator.pop(context, isValidated);
+                      }
                     });
-                  }
-                }); // _signIn
-              },
-              child: Text('Sign In'),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  Navigator.push<bool?>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RegisterPage(),
-                      )).then((isValidated) {
-                    if (isValidated != null) {
-                      Navigator.pop(context, isValidated);
+                  },
+                  child: Text('Register')),
+              ElevatedButton(
+                child: Text('Sign in with Google'),
+                onPressed: () async {
+                  await _signInWithGoogle().then((response) {
+                    if (response == "pass") {
+                      Navigator.pop(context);
+                    } else {
+                      setState(() {
+                        _error = response;
+                      });
                     }
                   });
                 },
-                child: Text('Register')),
-            ElevatedButton(
-              child: Text('Sign in with Google'),
-              onPressed: () async {
-                await _signInWithGoogle().then((response) {
-                  if (response == "pass") {
-                    Navigator.pop(context);
-                  } else {
-                    setState(() {
-                      _error = response;
-                    });
-                  }
-                });
-              },
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
